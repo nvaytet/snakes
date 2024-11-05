@@ -51,14 +51,21 @@ class Engine:
         if seed is not None:
             np.random.seed(seed)
 
+        nplayers = 1
+
         self.nx = config.nx
         self.ny = config.ny
-        self.array = np.zeros((self.ny, self.nx), dtype=np.uint8)
+        self.board_old = np.zeros((self.ny, self.nx), dtype=np.uint8)
+        self.board_old[0, :] = nplayers + 1
+        self.board_old[-1, :] = nplayers + 1
+        self.board_old[:, 0] = nplayers + 1
+        self.board_old[:, -1] = nplayers + 1
+        self.board_new = self.board_old.copy()
         # self.start_time = None
         # self._test = test
         # self.asteroids = []
         # self.safe = safe
-        # self.exiting = False
+        self.exiting = False
         # self.time_of_last_scoreboard_update = 0
         # self.time_of_last_asteroid = 0
         # self._crater_scaling = crater_scaling
@@ -73,15 +80,16 @@ class Engine:
         # nplayers = len(bots) + 1
         # for i in range(nplayers):
         #     colors.append(cmap(i / (nplayers - 1)))
-        nplayers = 1
 
         # self.bots = {bot.team: bot for bot in bots}
         # starting_positions = self.make_starting_positions(nplayers=len(self.bots))
         self.players = {}
         # for i, (bot, pos) in enumerate(zip(self.bots.values(), starting_positions)):
         for i in range(nplayers):
-            xpos = np.random.uniform(0, config.nx)
-            ypos = np.random.uniform(0, config.ny)
+            # xpos = np.random.uniform(0, config.nx)
+            # ypos = np.random.uniform(0, config.ny)
+            xpos = 10
+            ypos = 10
             # team = bot.team
             team = f"Player {i + 1}"
             self.players[team] = Player(
@@ -112,10 +120,10 @@ class Engine:
     #     choices = [int(random_origin + i * step) % config.nx for i in range(nplayers)]
     #     return np.random.permutation(choices)
 
-    def exit(self, message: str):
-        self.exiting = True
-        print(message)
-        # finalize_scores(players=self.players, test=self._test)
+    # def exit(self, message: str):
+    #     self.exiting = True
+    #     print(message)
+    #     # finalize_scores(players=self.players, test=self._test)
 
     def active_players(self):
         return (p for p in self.players.values() if not p.dead)
@@ -159,21 +167,41 @@ class Engine:
             old = player.position()
             player.move(dt=dt)
             new = player.position()
-            # self.array[pos[1], pos[0]] = player.number
-            ystart = min(old[1], new[1])
-            yend = max(old[1], new[1])
-            if ystart == yend:
-                yend += 1
-            xstart = min(old[0], new[0])
-            xend = max(old[0], new[0])
-            if xstart == xend:
-                xend += 1
+            # self.board_old[pos[1], pos[0]] = player.number
+            hw = (player.thickness - 1) // 2
+            ystart = min(old[1], new[1]) - hw
+            yend = max(old[1], new[1]) + 1 + hw
+            # if ystart != yend - 1:
+            #     ystart += 1
+            # yplus = 0
+            # else:
+            #     yplus = 1
+            xstart = min(old[0], new[0]) - hw
+            xend = max(old[0], new[0]) + 1 + hw
+            # if xstart != xend - 1:
+            #     xstart += 1
+            #     xplus = 0
+            # else:
+            #     xplus = 1
             ystart = min(max(0, ystart), self.ny)
             yend = min(max(0, yend), self.ny)
             xstart = min(max(0, xstart), self.nx)
             xend = min(max(0, xend), self.nx)
 
-            self.array[ystart:yend, xstart:xend] = player.number
+            # # if (xend - 1 - xstart) + (yend - 1 - ystart) > 0:
+            # yplus = int(ystart != yend - 1)
+            # y1 = yplus and ((yend - 1) == new[1])
+            # y2 = yplus and (ystart == new[1])
+            # xplus = int(xstart != xend - 1)
+            # x1 = xplus and ((xend - 1) == new[0])
+            # x2 = xplus and (xstart == new[0])
+
+            self.board_new[ystart:yend, xstart:xend] = player.number
+
+            if self.board_old[ystart:yend, xstart:xend].sum() > player.thickness**2:
+                player.die()
+
+        self.board_old[...] = self.board_new[...]
 
     # def check_landing(self, t: float):
     #     for player in self.active_players():
@@ -263,10 +291,10 @@ class Engine:
     #             self.asteroids.remove(asteroid)
 
     def update(self, dt: float):
-        # if self.exiting:
-        #     if self.graphics.exit_message is None:
-        #         self.graphics.show_exit_message()
-        #     return
+        if self.exiting:
+            if self.graphics.exit_message is None:
+                self.graphics.show_exit_message()
+            return
 
         # dt = dt * self._speedup
         # self.call_player_bots(t, dt)
@@ -275,9 +303,10 @@ class Engine:
         # if self._player_collisions:
         #     self.compute_collisions()
         # self.update_asteroids(t, dt)
-        self.graphics.update(array=self.array, players=self.players)
+        self.graphics.update(array=self.board_old, players=self.players)
 
-        # if len(list(self.active_players())) == 0:
-        #     self.exit(message="All players have either crashed or landed!")
+        if len(list(self.active_players())) == 0:
+            self.exiting = True
+            # self.exit()
 
         return

@@ -26,6 +26,7 @@ class Player:
         self.team = team
         self.number = number
         self.score = 0
+        self.thickness = config.thickness
         # self.score_text = None
         # self._main_thruster = False
         # self._left_thruster = False
