@@ -13,7 +13,7 @@ from .player import Player
 
 # from .scores import finalize_scores
 # from .terrain import Terrain
-from .tools import AsteroidInfo, Instructions, PlayerInfo
+from .tools import Instructions, PlayerInfo
 
 
 def add_key_actions(window, player: Player):
@@ -51,7 +51,7 @@ class Engine:
         if seed is not None:
             np.random.seed(seed)
 
-        nplayers = 1
+        nplayers = len(bots)
 
         self.nx = config.nx
         self.ny = config.ny
@@ -64,7 +64,7 @@ class Engine:
         # self.start_time = None
         # self._test = test
         # self.asteroids = []
-        # self.safe = safe
+        self.safe = safe
         self.exiting = False
         # self.time_of_last_scoreboard_update = 0
         # self.time_of_last_asteroid = 0
@@ -81,17 +81,17 @@ class Engine:
         # for i in range(nplayers):
         #     colors.append(cmap(i / (nplayers - 1)))
 
-        # self.bots = {bot.team: bot for bot in bots}
+        self.bots = {bot.team: bot for bot in bots}
         # starting_positions = self.make_starting_positions(nplayers=len(self.bots))
         self.players = {}
-        # for i, (bot, pos) in enumerate(zip(self.bots.values(), starting_positions)):
-        for i in range(nplayers):
-            # xpos = np.random.uniform(0, config.nx)
-            # ypos = np.random.uniform(0, config.ny)
-            xpos = 10
-            ypos = 10
+        for i, team in enumerate(self.bots):
+            # for i in range(nplayers):
+            xpos = np.random.uniform(0, config.nx)
+            ypos = np.random.uniform(0, config.ny)
+            # xpos = 10
+            # ypos = 10
             # team = bot.team
-            team = f"Player {i + 1}"
+            # team = f"Player {i + 1}"
             self.players[team] = Player(
                 team=team,
                 number=i + 1,
@@ -128,13 +128,13 @@ class Engine:
     def active_players(self):
         return (p for p in self.players.values() if not p.dead)
 
-    def generate_info(self, t: float, dt: float) -> dict:
-        info = {"t": t, "dt": dt, "terrain": self.game_map.terrain}
-        info["players"] = {
-            team: PlayerInfo(**p.to_dict()) for team, p in self.players.items()
-        }
-        info["asteroids"] = [AsteroidInfo(**a.to_dict()) for a in self.asteroids]
-        return info
+    # def generate_info(self, dt: float) -> dict:
+    #     info = {"dt": dt, "board": self.game_map.terrain}
+    #     info["players"] = {
+    #         team: PlayerInfo(**p.to_dict()) for team, p in self.players.items()
+    #     }
+    #     info["asteroids"] = [AsteroidInfo(**a.to_dict()) for a in self.asteroids]
+    #     return info
 
     def execute_player_bot(self, team: str, info: dict) -> Instructions:
         instructions = None
@@ -147,8 +147,12 @@ class Engine:
             instructions = self.bots[team].run(**info)
         return instructions
 
-    def call_player_bots(self, t: float, dt: float):
-        info = self.generate_info(t=t, dt=dt)
+    def call_player_bots(self, dt: float):
+        # info = self.generate_info(t=t, dt=dt)
+        info = {"dt": dt, "board": self.board_new}
+        info["players"] = {
+            team: PlayerInfo(**p.to_dict()) for team, p in self.players.items()
+        }
         for player in (p for p in self.active_players() if p.team != self._manual):
             if self.safe:
                 try:
@@ -163,6 +167,8 @@ class Engine:
                 )
 
     def move_players(self, dt: float):
+        points = 0
+        bonus = 0
         for player in self.active_players():
             old = player.position()
             player.move(dt=dt)
@@ -183,10 +189,14 @@ class Engine:
             #     xplus = 0
             # else:
             #     xplus = 1
-            ystart = min(max(0, ystart), self.ny)
-            yend = min(max(0, yend), self.ny)
-            xstart = min(max(0, xstart), self.nx)
-            xend = min(max(0, xend), self.nx)
+            # ystart = min(max(0, ystart), self.ny)
+            # yend = min(max(0, yend), self.ny)
+            # xstart = min(max(0, xstart), self.nx)
+            # xend = min(max(0, xend), self.nx)
+            ystart = np.clip(ystart, 0, self.ny)
+            yend = np.clip(yend, 0, self.ny)
+            xstart = np.clip(xstart, 0, self.nx)
+            xend = np.clip(xend, 0, self.nx)
 
             # # if (xend - 1 - xstart) + (yend - 1 - ystart) > 0:
             # yplus = int(ystart != yend - 1)
@@ -197,11 +207,21 @@ class Engine:
             # x2 = xplus and (xstart == new[0])
 
             self.board_new[ystart:yend, xstart:xend] = player.number
-
-            if self.board_old[ystart:yend, xstart:xend].sum() > player.thickness**2:
+            patch = self.board_old[ystart:yend, xstart:xend]
+            if patch.sum() > player.number * player.thickness**2:
                 player.die()
+                points += 1
+                clipped = np.clip(patch, 1, len(self.players))
+                patch_min = clipped.min()
+                patch_max = clipped.max()
+                bonus = patch_min if patch_max == player.number else patch_max
 
         self.board_old[...] = self.board_new[...]
+        if points > 0:
+            for player in self.active_players():
+                player.score += points
+                if player.number == bonus:
+                    player.score += 1
 
     # def check_landing(self, t: float):
     #     for player in self.active_players():
@@ -297,7 +317,7 @@ class Engine:
             return
 
         # dt = dt * self._speedup
-        # self.call_player_bots(t, dt)
+        self.call_player_bots(dt)
         self.move_players(dt=dt)
         # self.check_landing(t=t)
         # if self._player_collisions:
@@ -305,7 +325,7 @@ class Engine:
         # self.update_asteroids(t, dt)
         self.graphics.update(array=self.board_old, players=self.players)
 
-        if len(list(self.active_players())) == 0:
+        if len(list(self.active_players())) < 2:
             self.exiting = True
             # self.exit()
 

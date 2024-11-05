@@ -47,8 +47,8 @@ def image_to_sprite(
 class Graphics:
     def __init__(self, fullscreen: bool = False, players: dict = None):
         self.window = pyglet.window.Window(
-            config.nx * 2,
-            config.ny * 2,
+            config.window_size[0],
+            config.window_size[1],
             caption="Snakes!",
             fullscreen=fullscreen,
             resizable=not fullscreen,
@@ -83,7 +83,7 @@ class Graphics:
             anchor=(0, 0),
             recenter=False,
         )
-        self.background.scale = 2.0
+        self.background.scale = config.scaling
 
         # self.star_batch = pyglet.graphics.Batch()
         # self.background_batch = pyglet.graphics.Batch()
@@ -97,7 +97,7 @@ class Graphics:
         #     batch=self.main_batch,
         # )
         # self.time_left = None
-        # self.exit_message = None
+        self.exit_message = None
         # self.make_stars()
 
         @self.window.event

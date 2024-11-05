@@ -12,12 +12,11 @@ from . import config
 @dataclass
 class Instructions:
     """
-    Instructions for the lander.
+    Instructions for the snake.
     """
 
     left: bool = False
     right: bool = False
-    main: bool = False
 
 
 @dataclass(frozen=True)
@@ -27,12 +26,11 @@ class PlayerInfo:
     """
 
     team: str
-    position: Tuple[float, float]
-    velocity: Tuple[float, float]
-    heading: float
-    fuel: float
+    x: float
+    y: float
+    direction: str
+    speed: float
     dead: bool
-    landed: bool
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

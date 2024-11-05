@@ -3,13 +3,18 @@
 
 import snakes
 
-# bots = []
-# for repo in glob.glob("*_bot"):
-#     module = importlib.import_module(f"{repo}")
-#     bots.append(module.Bot())
+import template_bot
+
+names = ["Alice", "Bob", "Charlie", "David"]
+
+bots = []
+for name in names:
+    bot = template_bot.Bot()
+    bot.team = name
+    bots.append(bot)
 
 snakes.play(
-    bots=[],  # List of bots to use
+    bots=bots,  # List of bots to use
     manual=True,  # Set to True to play manually using the keyboard arrow keys
     # music=False,
     # crater_scaling=1.0,  # Artificially increase the size of craters
