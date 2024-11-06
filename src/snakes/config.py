@@ -9,8 +9,8 @@ class Config:
     def __init__(self):
         self.fps: int = 30
         self.resources: Path = ir.files("snakes") / "resources"
-        self.icon_size: int = 32
-        self.head_size: int = 8
+        # self.icon_size: int = 32
+        # self.head_size: int = 8
         # file = font_manager.findfont("sans")
         # self.large_font = ImageFont.truetype(file, size=16)
         # self.medium_font = ImageFont.truetype(file, size=12)
@@ -21,6 +21,7 @@ class Config:
         self.nx: int = self.window_size[0] // self.scaling
         self.ny: int = self.window_size[1] // self.scaling
         self.thickness = 3
+        self.powerup_size = 32
         # self.time_limit = 60 * 5
         # self.gravity = np.array([0, -1.62])  # m/s^2
         # self.thrust = np.abs(self.gravity[1]) * 3  # m/s^2

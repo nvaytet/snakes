@@ -6,42 +6,43 @@ import pyglet
 from PIL import Image
 
 from . import config
+from .tools import image_to_imagedata, image_to_sprite
 
 # from .terrain import Terrain
 
 
-def recenter_image(img: pyglet.image.ImageData) -> pyglet.image.ImageData:
-    img.anchor_x = img.width // 2
-    img.anchor_y = img.height // 2
-    return img
+# def recenter_image(img: pyglet.image.ImageData) -> pyglet.image.ImageData:
+#     img.anchor_x = img.width // 2
+#     img.anchor_y = img.height // 2
+#     return img
 
 
-def image_to_imagedata(img, anchor=None, recenter=True):
-    imd = pyglet.image.ImageData(
-        width=img.width,
-        height=img.height,
-        fmt="RGBA",
-        data=img.tobytes(),
-        pitch=-img.width * 4,
-    )
-    if anchor is not None:
-        imd.anchor_x = anchor[0]
-        imd.anchor_y = anchor[1]
-    elif recenter:
-        imd = recenter_image(imd)
-    return imd
+# def image_to_imagedata(img, anchor=None, recenter=True):
+#     imd = pyglet.image.ImageData(
+#         width=img.width,
+#         height=img.height,
+#         fmt="RGBA",
+#         data=img.tobytes(),
+#         pitch=-img.width * 4,
+#     )
+#     if anchor is not None:
+#         imd.anchor_x = anchor[0]
+#         imd.anchor_y = anchor[1]
+#     elif recenter:
+#         imd = recenter_image(imd)
+#     return imd
 
 
-def image_to_sprite(
-    img: Image,
-    x: float,
-    y: float,
-    batch: pyglet.graphics.Batch,
-    recenter: bool = True,
-    anchor: tuple[float, float] | None = None,
-) -> pyglet.sprite.Sprite:
-    imd = image_to_imagedata(img, anchor=anchor, recenter=recenter)
-    return pyglet.sprite.Sprite(img=imd, x=x, y=y, batch=batch)
+# def image_to_sprite(
+#     img: Image,
+#     x: float,
+#     y: float,
+#     batch: pyglet.graphics.Batch,
+#     recenter: bool = True,
+#     anchor: tuple[float, float] | None = None,
+# ) -> pyglet.sprite.Sprite:
+#     imd = image_to_imagedata(img, anchor=anchor, recenter=recenter)
+#     return pyglet.sprite.Sprite(img=imd, x=x, y=y, batch=batch)
 
 
 class Graphics:
@@ -159,8 +160,8 @@ class Graphics:
             "Press ESC to exit",
             color=(153, 51, 153, 255),
             font_size=80,
-            x=config.nx * 0.5,
-            y=config.ny * 0.5,
+            x=config.window_size[0] * 0.5,
+            y=config.window_size[1] * 0.5,
             batch=self.main_batch,
             anchor_x="center",
             anchor_y="center",

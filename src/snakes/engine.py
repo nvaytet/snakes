@@ -4,8 +4,10 @@ from typing import Optional
 
 import numpy as np
 import pyglet
+import time
 
 from . import config
+from .powerup import ThinPowerup
 
 # from .asteroid import Asteroid
 from .graphics import Graphics
@@ -53,9 +55,9 @@ class Engine:
 
         nplayers = len(bots)
 
-        self.nx = config.nx
-        self.ny = config.ny
-        self.board_old = np.zeros((self.ny, self.nx), dtype=np.uint8)
+        # config.nx = config.nx
+        # config.ny = config.ny
+        self.board_old = np.zeros((config.ny, config.nx), dtype=np.uint8)
         self.board_old[0, :] = nplayers + 1
         self.board_old[-1, :] = nplayers + 1
         self.board_old[:, 0] = nplayers + 1
@@ -81,13 +83,15 @@ class Engine:
         # for i in range(nplayers):
         #     colors.append(cmap(i / (nplayers - 1)))
 
+        self.powerups = []
+
         self.bots = {bot.team: bot for bot in bots}
         # starting_positions = self.make_starting_positions(nplayers=len(self.bots))
         self.players = {}
         for i, team in enumerate(self.bots):
             # for i in range(nplayers):
-            xpos = np.random.uniform(0, config.nx)
-            ypos = np.random.uniform(0, config.ny)
+            xpos = np.random.uniform(0, config.nx - 1)
+            ypos = np.random.uniform(0, config.ny - 1)
             # xpos = 10
             # ypos = 10
             # team = bot.team
@@ -110,6 +114,8 @@ class Engine:
             add_key_actions(window=self.graphics.window, player=manual_player)
         else:
             self._manual = None
+
+        self.start_time = time.time()
 
         pyglet.clock.schedule_interval(self.update, 1 / config.fps)
         pyglet.app.run()
@@ -189,14 +195,14 @@ class Engine:
             #     xplus = 0
             # else:
             #     xplus = 1
-            # ystart = min(max(0, ystart), self.ny)
-            # yend = min(max(0, yend), self.ny)
-            # xstart = min(max(0, xstart), self.nx)
-            # xend = min(max(0, xend), self.nx)
-            ystart = np.clip(ystart, 0, self.ny)
-            yend = np.clip(yend, 0, self.ny)
-            xstart = np.clip(xstart, 0, self.nx)
-            xend = np.clip(xend, 0, self.nx)
+            # ystart = min(max(0, ystart), config.ny)
+            # yend = min(max(0, yend), config.ny)
+            # xstart = min(max(0, xstart), config.nx)
+            # xend = min(max(0, xend), config.nx)
+            ystart = np.clip(ystart, 0, config.ny)
+            yend = np.clip(yend, 0, config.ny)
+            xstart = np.clip(xstart, 0, config.nx)
+            xend = np.clip(xend, 0, config.nx)
 
             # # if (xend - 1 - xstart) + (yend - 1 - ystart) > 0:
             # yplus = int(ystart != yend - 1)
@@ -222,6 +228,27 @@ class Engine:
                 player.score += points
                 if player.number == bonus:
                     player.score += 1
+
+    def make_powerups(self, t: float):
+        if self.powerups:
+            return
+        # print("making powerup")
+        x, y = np.random.uniform(0, config.nx - 1), np.random.uniform(0, config.ny - 1)
+        self.powerups.append(ThinPowerup(x=x, y=y, batch=self.graphics.main_batch))
+
+    def get_powerups(self):
+        for player in self.active_players():
+            for powerup in self.powerups:
+                if (
+                    np.linalg.norm(
+                        np.array([player.x, player.y])
+                        - np.array([powerup.x, powerup.y])
+                    )
+                    < config.powerup_size
+                ):
+                    powerup.apply(player)
+                    # powerup.avatar.delete()
+                    self.powerups.remove(powerup)
 
     # def check_landing(self, t: float):
     #     for player in self.active_players():
@@ -311,14 +338,17 @@ class Engine:
     #             self.asteroids.remove(asteroid)
 
     def update(self, dt: float):
+        t = time.time() - self.start_time
         if self.exiting:
             if self.graphics.exit_message is None:
                 self.graphics.show_exit_message()
             return
 
         # dt = dt * self._speedup
+        self.make_powerups(t)
         self.call_player_bots(dt)
         self.move_players(dt=dt)
+        self.get_powerups()
         # self.check_landing(t=t)
         # if self._player_collisions:
         #     self.compute_collisions()
