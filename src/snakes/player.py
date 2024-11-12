@@ -2,7 +2,9 @@
 
 from typing import Optional
 
+import numpy as np
 from matplotlib.colors import to_hex, to_rgb
+
 
 from . import config
 from .tools import Instructions
@@ -26,9 +28,11 @@ class Player:
         self.team = team
         self.number = number
         self.score = 0
-        self.thickness = config.thickness
-        self.picked_up_powerup = False
+        self._thickness = config.thickness
+        self.invincible = False
         self.ghost = False
+        self.gap = 0
+        self.next_gap = np.random.uniform(0, config.gap_period)
         self.speed = config.speed
         self.powerups = []
         # self.score_text = None
@@ -47,21 +51,39 @@ class Player:
         #     back_batch=back_batch,
         #     main_batch=main_batch,
         # )
-        self.direction = "U"
+        self.direction = np.random.choice(["U", "D", "L", "R"])
         self.dead = False
         self.x, self.y = position
         print(self.x, self.y)
         # self.landed = False
         self.avatar = None
 
+    @property
+    def thickness(self):
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, value):
+        self._thickness = value
+        self.avatar.width = value * config.scaling
+        self.avatar.height = value * config.scaling
+        self.avatar.anchor_position = (
+            0.5 * self.avatar.width,
+            0.5 * self.avatar.height,
+        )
+
     def make_avatar(self, batch: pyglet.graphics.Batch):
         self.avatar = shapes.Rectangle(
             self.x,
             self.y,
-            self.thickness,
-            self.thickness,
+            self._thickness * config.scaling,
+            self._thickness * config.scaling,
             color=tuple(int(c * 255) for c in to_rgb(self.color)),
             batch=batch,
+        )
+        self.avatar.anchor_position = (
+            0.5 * self.avatar.width,
+            0.5 * self.avatar.height,
         )
 
     def move(self, dt: float):

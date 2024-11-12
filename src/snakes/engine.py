@@ -7,7 +7,7 @@ import pyglet
 import time
 
 from . import config
-from .powerup import ThickPowerup
+from .powerup import all_powerups, ClearPowerup
 
 # from .asteroid import Asteroid
 from .graphics import Graphics
@@ -96,9 +96,9 @@ class Engine:
             # ypos = 10
             # team = bot.team
             # team = f"Player {i + 1}"
-            if i == 0:
-                xpos = 800
-                ypos = 10
+            # if i == 0:
+            #     xpos = 800
+            #     ypos = 10
             self.players[team] = Player(
                 team=team,
                 number=i + 1,
@@ -218,12 +218,12 @@ class Engine:
             # x1 = xplus and ((xend - 1) == new[0])
             # x2 = xplus and (xstart == new[0])
 
-            if not player.ghost:
+            if not player.ghost and not player.gap:
                 self.board_new[ystart:yend, xstart:xend] = player.number
 
             patch = self.board_old[ystart:yend, xstart:xend]
             if (patch.sum() > player.number * player.thickness**2) and (
-                not player.picked_up_powerup
+                not player.invincible and not player.ghost
             ):
                 player.die()
                 points += 1
@@ -240,29 +240,32 @@ class Engine:
                     player.score += 1
 
     def make_powerups(self, t: float):
-        if self.powerups:
+        if (len(self.powerups) >= config.max_powerups) or (t < config.no_powerups):
             return
         # print("making powerup")
         x, y = np.random.uniform(0, config.nx - 1), np.random.uniform(0, config.ny - 1)
         # x = 800
         # y = 100
-        # powerup = np.random.choice([ThinPowerup, ThickPowerup])
-        powerup = np.random.choice([ThickPowerup])
+        powerup = np.random.choice(
+            list(all_powerups.keys()), p=list(all_powerups.values())
+        )
+        # powerup = np.random.choice([ThickPowerup])
         self.powerups.append(powerup(x=x, y=y, batch=self.graphics.main_batch))
 
     def get_powerups(self):
         for player in self.active_players():
-            player.picked_up_powerup = False
+            player.invincible = False
             for powerup in self.powerups:
                 dist = np.linalg.norm(
                     np.array([player.x, player.y]) - np.array([powerup.x, powerup.y])
                 )
-                # if player.number == 1:
-                #     print(dist)
                 if dist < (config.powerup_size / 2):
-                    powerup.apply(player)
-                    # powerup.avatar.delete()
-                    player.powerups.append(powerup)
+                    if isinstance(powerup, ClearPowerup):
+                        self.board_new[...] = 0
+                        self.board_old[...] = 0
+                    else:
+                        powerup.apply(player)
+                        player.powerups.append(powerup)
                     self.powerups.remove(powerup)
 
     def expire_powerups(self):
@@ -275,92 +278,14 @@ class Engine:
                     pup.revert(player)
                     player.powerups.remove(pup)
 
-    # def check_landing(self, t: float):
-    #     for player in self.active_players():
-    #         lem_floor = int(player.y - config.avatar_size[1] / 2)
-    #         y_values = self.game_map.terrain[
-    #             int(player.x - config.avatar_size[0] / 2) : int(
-    #                 player.x + config.avatar_size[0] / 2
-    #             ),
-    #         ]
-    #         if any(y_values >= lem_floor):
-    #             uneven_terrain = any(y_values < lem_floor)
-    #             too_fast = np.linalg.norm(player.velocity) > config.max_landing_speed
-    #             landing_angle = np.abs(player.heading)
-    #             bad_angle = landing_angle > config.max_landing_angle
-    #             if any([uneven_terrain, too_fast, bad_angle]):
-    #                 reason = []
-    #                 if uneven_terrain:
-    #                     reason.append("uneven terrain")
-    #                 if too_fast:
-    #                     reason.append(
-    #                         f"velocity=[{player.velocity[0]:.1f}, "
-    #                         f"{player.velocity[1]:.1f}]"
-    #                     )
-    #                 if bad_angle:
-    #                     reason.append(f"landing angle={landing_angle:.1f}")
-    #                 player.crash(reason=", ".join(reason))
-    #             else:
-    #                 player.land(
-    #                     time_left=config.time_limit - t,
-    #                     landing_site_width=self.game_map.landing_sites[int(player.x)],
-    #                     flag=getattr(self.bots[player.team], "flag", None),
-    #                 )
-
-    # def compute_collisions(self):
-    #     players = list(self.active_players())
-    #     n = len(players)
-    #     x = np.array([p.x for p in players])
-    #     y = np.array([p.y for p in players])
-    #     xpos1 = np.broadcast_to(x, (n, n))
-    #     xpos2 = xpos1.T
-    #     ypos1 = np.broadcast_to(y, (n, n))
-    #     ypos2 = ypos1.T
-    #     dist = np.tril(np.sqrt((xpos2 - xpos1) ** 2 + (ypos2 - ypos1) ** 2))
-    #     lems1, lems2 = np.where((dist < config.collision_radius) & (dist > 0))
-    #     for i, j in zip(lems1, lems2):
-    #         p1 = players[i]
-    #         p2 = players[j]
-    #         x1 = p1.position
-    #         v1 = p1.velocity
-    #         x2 = p2.position
-    #         v2 = p2.velocity
-    #         p1.velocity = v1 - np.dot(v1 - v2, x1 - x2) / np.linalg.norm(
-    #             x1 - x2
-    #         ) ** 2 * (x1 - x2)
-    #         p2.velocity = v2 - np.dot(v2 - v1, x2 - x1) / np.linalg.norm(
-    #             x2 - x1
-    #         ) ** 2 * (x2 - x1)
-
-    # def update_asteroids(self, t: float, dt: float):
-    #     delay = (
-    #         1.0 - config.asteroid_delay
-    #     ) / config.time_limit * t + config.asteroid_delay
-    #     if (t - self.time_of_last_asteroid) > delay:
-    #         self.asteroids.append(
-    #             Asteroid(
-    #                 x=np.random.uniform(0, config.nx),
-    #                 y=config.ny + 100,
-    #                 v=np.random.uniform(100, 200),
-    #                 heading=np.random.uniform(-25, -155),
-    #                 size=72,
-    #                 batch=self.graphics.main_batch,
-    #             )
-    #         )
-    #         self.time_of_last_asteroid = t
-    #     for asteroid in self.asteroids:
-    #         asteroid.move(dt=dt)
-    #         tip = asteroid.tip()
-    #         tip_size = asteroid.size * config.asteroid_tip_size
-    #         if self._asteroid_collisions:
-    #             for player in self.active_players():
-    #                 d = np.sqrt((player.x - tip[0]) ** 2 + (player.y - tip[1]) ** 2)
-    #                 if d < tip_size:
-    #                     player.crash(reason="asteroid collision")
-    #         if tip[1] <= self.game_map.terrain[int(tip[0])]:
-    #             self.game_map.make_crater(x=int(tip[0]), scaling=self._crater_scaling)
-    #             asteroid.avatar.delete()
-    #             self.asteroids.remove(asteroid)
+    def update_player_gap_state(self, t: float):
+        for player in self.active_players():
+            if player.gap:
+                if t > player.gap:
+                    player.gap = 0
+                    player.next_gap = t + np.random.uniform(0, config.gap_period)
+            elif t > player.next_gap:
+                player.gap = t + config.gap_duration
 
     def update(self, dt: float):
         t = time.time() - self.start_time
@@ -370,6 +295,7 @@ class Engine:
             return
 
         # dt = dt * self._speedup
+        self.update_player_gap_state(t)
         self.expire_powerups()
         self.make_powerups(t)
         self.call_player_bots(dt)
