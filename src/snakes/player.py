@@ -2,10 +2,13 @@
 
 from typing import Optional
 
-from matplotlib.colors import to_hex
+from matplotlib.colors import to_hex, to_rgb
 
 from . import config
 from .tools import Instructions
+
+import pyglet
+from pyglet import shapes
 
 
 class Player:
@@ -18,12 +21,16 @@ class Player:
         # avatar: Union[int, str],
         # position: float,
         # back_batch: pyglet.graphics.Batch,
-        # main_batch: pyglet.graphics.Batch,
+        # batch: pyglet.graphics.Batch,
     ):
         self.team = team
         self.number = number
         self.score = 0
         self.thickness = config.thickness
+        self.picked_up_powerup = False
+        self.ghost = False
+        self.speed = config.speed
+        self.powerups = []
         # self.score_text = None
         # self._main_thruster = False
         # self._left_thruster = False
@@ -45,12 +52,24 @@ class Player:
         self.x, self.y = position
         print(self.x, self.y)
         # self.landed = False
+        self.avatar = None
+
+    def make_avatar(self, batch: pyglet.graphics.Batch):
+        self.avatar = shapes.Rectangle(
+            self.x,
+            self.y,
+            self.thickness,
+            self.thickness,
+            color=tuple(int(c * 255) for c in to_rgb(self.color)),
+            batch=batch,
+        )
 
     def move(self, dt: float):
-        vx = config.speed * ((self.direction == "R") - (self.direction == "L"))
-        vy = config.speed * ((self.direction == "U") - (self.direction == "D"))
+        vx = self.speed * ((self.direction == "R") - (self.direction == "L"))
+        vy = self.speed * ((self.direction == "U") - (self.direction == "D"))
         self.x += vx * dt
         self.y += vy * dt
+        self.avatar.position = (self.x * config.scaling, self.y * config.scaling)
 
     def position(self):
         return int(self.x), int(self.y)
@@ -76,6 +95,7 @@ class Player:
 
     def die(self):
         self.dead = True
+        print(f"Player {self.team} died")
 
     # def update_scoreboard(self, batch: pyglet.graphics.Batch):
     #     img = Image.new("RGBA", (150, 54), (0, 0, 0, 0))

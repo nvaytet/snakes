@@ -7,7 +7,7 @@ import pyglet
 import time
 
 from . import config
-from .powerup import ThinPowerup
+from .powerup import ThickPowerup
 
 # from .asteroid import Asteroid
 from .graphics import Graphics
@@ -96,6 +96,9 @@ class Engine:
             # ypos = 10
             # team = bot.team
             # team = f"Player {i + 1}"
+            if i == 0:
+                xpos = 800
+                ypos = 10
             self.players[team] = Player(
                 team=team,
                 number=i + 1,
@@ -107,6 +110,9 @@ class Engine:
             )
 
         self.graphics = Graphics(fullscreen=fullscreen, players=self.players)
+
+        for player in self.players.values():
+            player.make_avatar(batch=self.graphics.main_batch)
 
         if manual:
             manual_player = list(self.players.values())[0]
@@ -212,9 +218,13 @@ class Engine:
             # x1 = xplus and ((xend - 1) == new[0])
             # x2 = xplus and (xstart == new[0])
 
-            self.board_new[ystart:yend, xstart:xend] = player.number
+            if not player.ghost:
+                self.board_new[ystart:yend, xstart:xend] = player.number
+
             patch = self.board_old[ystart:yend, xstart:xend]
-            if patch.sum() > player.number * player.thickness**2:
+            if (patch.sum() > player.number * player.thickness**2) and (
+                not player.picked_up_powerup
+            ):
                 player.die()
                 points += 1
                 clipped = np.clip(patch, 1, len(self.players))
@@ -234,21 +244,36 @@ class Engine:
             return
         # print("making powerup")
         x, y = np.random.uniform(0, config.nx - 1), np.random.uniform(0, config.ny - 1)
-        self.powerups.append(ThinPowerup(x=x, y=y, batch=self.graphics.main_batch))
+        # x = 800
+        # y = 100
+        # powerup = np.random.choice([ThinPowerup, ThickPowerup])
+        powerup = np.random.choice([ThickPowerup])
+        self.powerups.append(powerup(x=x, y=y, batch=self.graphics.main_batch))
 
     def get_powerups(self):
         for player in self.active_players():
+            player.picked_up_powerup = False
             for powerup in self.powerups:
-                if (
-                    np.linalg.norm(
-                        np.array([player.x, player.y])
-                        - np.array([powerup.x, powerup.y])
-                    )
-                    < config.powerup_size
-                ):
+                dist = np.linalg.norm(
+                    np.array([player.x, player.y]) - np.array([powerup.x, powerup.y])
+                )
+                # if player.number == 1:
+                #     print(dist)
+                if dist < (config.powerup_size / 2):
                     powerup.apply(player)
                     # powerup.avatar.delete()
+                    player.powerups.append(powerup)
                     self.powerups.remove(powerup)
+
+    def expire_powerups(self):
+        for player in self.active_players():
+            # expired = []
+            for pup in player.powerups:
+                pup.tick()
+                if pup.is_expired():
+                    # expired.append(pup)
+                    pup.revert(player)
+                    player.powerups.remove(pup)
 
     # def check_landing(self, t: float):
     #     for player in self.active_players():
@@ -345,6 +370,7 @@ class Engine:
             return
 
         # dt = dt * self._speedup
+        self.expire_powerups()
         self.make_powerups(t)
         self.call_player_bots(dt)
         self.move_players(dt=dt)

@@ -55,6 +55,7 @@ class Graphics:
             resizable=not fullscreen,
         )
 
+        self.background_batch = pyglet.graphics.Batch()
         self.main_batch = pyglet.graphics.Batch()
 
         # self.cmap = mcolors.ListedColormap(
@@ -68,27 +69,21 @@ class Graphics:
         img = Image.fromarray(
             np.flipud(np.zeros((config.ny, config.nx, 4), dtype=np.uint8))
         )
-        # self.background = pyglet.image.ImageData(
-        #     width=img.width,
-        #     height=img.height,
-        #     fmt="RGBA",
-        #     data=img.tobytes(),
-        #     pitch=-img.width * 4,
-        # )
         self.background = image_to_sprite(
             # img, x=1000, y=500, batch=self.main_batch, recenter=False
             img,
             x=0,
             y=0,
-            batch=self.main_batch,
+            batch=self.background_batch,
             anchor=(0, 0),
             recenter=False,
         )
         self.background.scale = config.scaling
+        # self.background.z = -10
 
         # self.star_batch = pyglet.graphics.Batch()
         # self.background_batch = pyglet.graphics.Batch()
-        self.update(array=np.zeros((config.ny // 2, config.nx // 2), dtype=np.uint8))
+        # self.update(array=np.zeros((config.ny // 2, config.nx // 2), dtype=np.uint8))
         # self.time_label = pyglet.sprite.Sprite(
         #     img=text_to_image(
         #         "Time left:", width=100, height=24, font=config.large_font
@@ -106,12 +101,13 @@ class Graphics:
             self.window.clear()
             # self.background.get_texture().blit(0, 0)
             # self.star_batch.draw()
-            # self.background_batch.draw()
+            self.background_batch.draw()
             self.main_batch.draw()
 
     def update(self, array: np.ndarray, players: list = None):
         # self.background = array
         img = Image.fromarray(np.flipud((self.cmap(array) * 255).astype("uint8")))
+        # img = Image.fromarray((self.cmap(array) * 255).astype("uint8"))
         # self.background.data = img.tobytes()
         self.background.image = image_to_imagedata(img, anchor=(0, 0), recenter=False)
         # self.background = pyglet.image.ImageData(

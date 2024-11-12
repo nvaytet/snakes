@@ -22,6 +22,7 @@ class Config:
         self.ny: int = self.window_size[1] // self.scaling
         self.thickness = 3
         self.powerup_size = 32
+        self.powerup_duration = 5 * self.fps
         # self.time_limit = 60 * 5
         # self.gravity = np.array([0, -1.62])  # m/s^2
         # self.thrust = np.abs(self.gravity[1]) * 3  # m/s^2

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import pyglet
 from PIL import Image, ImageDraw, ImageFont
@@ -31,22 +31,6 @@ class PlayerInfo:
     direction: str
     speed: float
     dead: bool
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
-
-
-@dataclass(frozen=True)
-class AsteroidInfo:
-    """
-    Information about an asteroid.
-    """
-
-    id: str
-    position: Tuple[float, float]
-    velocity: Tuple[float, float]
-    heading: float
-    size: float
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -137,9 +121,8 @@ def image_to_sprite(
     x: float,
     y: float,
     batch: pyglet.graphics.Batch,
-    z: float = 0.0,
     recenter: bool = True,
     anchor: tuple[float, float] | None = None,
 ) -> pyglet.sprite.Sprite:
     imd = image_to_imagedata(img, anchor=anchor, recenter=recenter)
-    return pyglet.sprite.Sprite(img=imd, x=x, y=y, z=z, batch=batch)
+    return pyglet.sprite.Sprite(img=imd, x=x, y=y, batch=batch)
