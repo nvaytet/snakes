@@ -36,8 +36,8 @@ def _print_scores(round_scores: Dict[str, int], final_scores: Dict[str, int]):
 
 
 def finalize_scores(players: Dict[str, Player], test: bool = False):
-    scores = read_scores(players, test=test)
-    round_scores = {k: p.score for k, p in players.items()}
-    final_scores = {k: scores[k] + p.score for k, p in players.items()}
-    _print_scores(round_scores=round_scores, final_scores=final_scores)
-    _write_scores(final_scores)
+    old_scores = read_scores(players, test=test)
+    round_scores = {k: p.score - old_scores[k] for k, p in players.items()}
+    new_scores = {k: p.score for k, p in players.items()}
+    _print_scores(round_scores=round_scores, final_scores=new_scores)
+    _write_scores(new_scores)

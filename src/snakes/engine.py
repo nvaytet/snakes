@@ -13,7 +13,8 @@ from .powerup import all_powerups, ClearPowerup
 from .graphics import Graphics
 from .player import Player
 
-# from .scores import finalize_scores
+from .scores import read_scores, finalize_scores
+
 # from .terrain import Terrain
 from .tools import Instructions, PlayerInfo
 
@@ -108,11 +109,16 @@ class Engine:
                 # back_batch=self.graphics.background_batch,
                 # main_batch=self.graphics.main_batch,
             )
+        scores = read_scores(self.players, test=test)
+        for player in self.players.values():
+            player.score = scores[player.team]
 
         self.graphics = Graphics(fullscreen=fullscreen, players=self.players)
 
         for player in self.players.values():
             player.make_avatar(batch=self.graphics.main_batch)
+
+        self.graphics.update_scores(players=self.players)
 
         if manual:
             manual_player = list(self.players.values())[0]
@@ -132,10 +138,10 @@ class Engine:
     #     choices = [int(random_origin + i * step) % config.nx for i in range(nplayers)]
     #     return np.random.permutation(choices)
 
-    # def exit(self, message: str):
-    #     self.exiting = True
-    #     print(message)
-    #     # finalize_scores(players=self.players, test=self._test)
+    def exit(self):
+        # self.exiting = True
+        # print(message)
+        finalize_scores(players=self.players, test=self._test)
 
     def active_players(self):
         return (p for p in self.players.values() if not p.dead)
@@ -238,6 +244,7 @@ class Engine:
                 player.score += points
                 if player.number == bonus:
                     player.score += 1
+            self.graphics.update_scores(players=self.players)
 
     def make_powerups(self, t: float):
         if (len(self.powerups) >= config.max_powerups) or (t < config.no_powerups):
@@ -309,6 +316,6 @@ class Engine:
 
         if len(list(self.active_players())) < 2:
             self.exiting = True
-            # self.exit()
+            self.exit()
 
         return

@@ -50,10 +50,11 @@ class Graphics:
         self.window = pyglet.window.Window(
             config.window_size[0],
             config.window_size[1],
-            caption="Snakes!",
+            # caption=", ".join(f"{p.team}: {p.score}" for p in players.values()),
             fullscreen=fullscreen,
             resizable=not fullscreen,
         )
+        # self.up
 
         self.background_batch = pyglet.graphics.Batch()
         self.main_batch = pyglet.graphics.Batch()
@@ -103,6 +104,11 @@ class Graphics:
             # self.star_batch.draw()
             self.background_batch.draw()
             self.main_batch.draw()
+
+    def update_scores(self, players: dict):
+        self.window.set_caption(
+            ", ".join(f"{p.team}: {p.score}" for p in players.values())
+        )
 
     def update(self, array: np.ndarray, players: list = None):
         # self.background = array
