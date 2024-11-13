@@ -5,10 +5,10 @@ from .tools import image_to_sprite
 
 
 class Powerup:
-    def __init__(self, x, y, batch):
+    def __init__(self, x, y, speedup, batch):
         self.x = x
         self.y = y
-        print("making avatar", x, y)
+        self.speedup = speedup
         self.avatar = image_to_sprite(
             Image.open(self.file),
             x=x * config.scaling,
@@ -16,8 +16,6 @@ class Powerup:
             batch=batch,
         )
         self.duration = config.powerup_duration
-        print(self.avatar)
-        print(self)
 
     def __str__(self):
         return f"Powerup: {self.x} {self.y}"
@@ -27,7 +25,7 @@ class Powerup:
         player.invincible = True
 
     def tick(self):
-        self.duration -= 1
+        self.duration -= self.speedup
 
     def is_expired(self):
         return self.duration <= 0
@@ -35,11 +33,18 @@ class Powerup:
     def revert(self, player):
         player.invincible = True
 
+    def to_dict(self):
+        return {
+            "kind": self.__class__.__name__,
+            "x": self.x,
+            "y": self.y,
+        }
+
 
 class ThinPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "thin.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
     def apply(self, player):
         player.thickness = max(player.thickness - 2, 1)
@@ -51,9 +56,9 @@ class ThinPowerup(Powerup):
 
 
 class ThickPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "thick.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
     def apply(self, player):
         player.thickness += 4
@@ -65,9 +70,9 @@ class ThickPowerup(Powerup):
 
 
 class GhostPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "ghost.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
     def apply(self, player):
         player.ghost = True
@@ -79,15 +84,15 @@ class GhostPowerup(Powerup):
 
 
 class ClearPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "clear.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
 
 class FastPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "fast.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
     def apply(self, player):
         player.speed += 30
@@ -99,9 +104,9 @@ class FastPowerup(Powerup):
 
 
 class SlowPowerup(Powerup):
-    def __init__(self, x, y, batch):
+    def __init__(self, *args, **kwargs):
         self.file = config.resources / "slow.png"
-        super().__init__(x, y, batch)
+        super().__init__(*args, **kwargs)
 
     def apply(self, player):
         player.speed -= 30

@@ -9,14 +9,10 @@ import time
 from . import config
 from .powerup import all_powerups, ClearPowerup
 
-# from .asteroid import Asteroid
 from .graphics import Graphics
 from .player import Player
-
 from .scores import read_scores, finalize_scores
-
-# from .terrain import Terrain
-from .tools import Instructions, PlayerInfo
+from .tools import Instructions, PlayerInfo, PowerupInfo
 
 
 def add_key_actions(window, player: Player):
@@ -26,15 +22,6 @@ def add_key_actions(window, player: Player):
             player.turn_left()
         elif symbol == pyglet.window.key.RIGHT:
             player.turn_right()
-
-    # @window.event
-    # def on_key_release(symbol, modifiers):
-    #     if symbol == pyglet.window.key.UP:
-    #         player.main_thruster = False
-    #     elif symbol == pyglet.window.key.LEFT:
-    #         player.left_thruster = False
-    #     elif symbol == pyglet.window.key.RIGHT:
-    #         player.right_thruster = False
 
 
 class Engine:
@@ -46,36 +33,28 @@ class Engine:
         seed: Optional[int] = None,
         fullscreen: bool = False,
         manual: bool = False,
-        crater_scaling: float = 1.0,
-        player_collisions: bool = True,
-        asteroid_collisions: bool = True,
-        speedup: float = 1.0,
+        speedup: int = 1,
     ):
         if seed is not None:
             np.random.seed(seed)
 
-        nplayers = len(bots)
+        # nplayers = len(bots)
 
         # config.nx = config.nx
         # config.ny = config.ny
-        self.board_old = np.zeros((config.ny, config.nx), dtype=np.uint8)
-        self.board_old[0, :] = nplayers + 1
-        self.board_old[-1, :] = nplayers + 1
-        self.board_old[:, 0] = nplayers + 1
-        self.board_old[:, -1] = nplayers + 1
-        self.board_new = self.board_old.copy()
         # self.start_time = None
         self._test = test
         # self.asteroids = []
         self.safe = safe
-        self.exiting = False
-        self.we_have_a_winner = False
+        # self.exiting = False
+        self.match_winner = False
+        self.round_winner = False
         # self.time_of_last_scoreboard_update = 0
         # self.time_of_last_asteroid = 0
         # self._crater_scaling = crater_scaling
         # self._player_collisions = player_collisions
         # self._asteroid_collisions = asteroid_collisions
-        # self._speedup = speedup
+        self.speedup = int(speedup)
 
         # self.game_map = Terrain()
 
@@ -90,19 +69,14 @@ class Engine:
         self.bots = {bot.team: bot for bot in bots}
         scores = read_scores(self.bots, test=test)
 
+        self.reset_board()
+
         # starting_positions = self.make_starting_positions(nplayers=len(self.bots))
         self.players = {}
         for i, team in enumerate(self.bots):
             # for i in range(nplayers):
             xpos = np.random.uniform(0, config.nx - 1)
             ypos = np.random.uniform(0, config.ny - 1)
-            # xpos = 10
-            # ypos = 10
-            # team = bot.team
-            # team = f"Player {i + 1}"
-            # if i == 0:
-            #     xpos = 800
-            #     ypos = 10
             self.players[team] = Player(
                 team=team,
                 number=i + 1,
@@ -131,6 +105,7 @@ class Engine:
             self._manual = None
 
         self.start_time = time.time()
+        self.time = 0.0
 
         pyglet.clock.schedule_interval(self.update, 1 / config.fps)
         pyglet.app.run()
@@ -141,13 +116,24 @@ class Engine:
     #     choices = [int(random_origin + i * step) % config.nx for i in range(nplayers)]
     #     return np.random.permutation(choices)
 
+    def reset_board(self):
+        nplayers = len(self.bots)
+        self.board_old = np.zeros((config.ny, config.nx), dtype=np.uint8)
+        self.board_old[0, :] = nplayers + 1
+        self.board_old[-1, :] = nplayers + 1
+        self.board_old[:, 0] = nplayers + 1
+        self.board_old[:, -1] = nplayers + 1
+        self.board_new = self.board_old.copy()
+
     def exit(self, last_player: Player | None):
         # self.exiting = True
         # print(message)
         if last_player is not None:
             if last_player.finalist:
                 last_player.score = config.high_score * 20
-                self.we_have_a_winner = f"{last_player.team} wins the match!"
+                self.match_winner = f"{last_player.team} wins the match!"
+            else:
+                self.round_winner = f"{last_player.team} wins the round!"
 
         finalize_scores(players=self.players, test=self._test)
 
@@ -175,10 +161,11 @@ class Engine:
 
     def call_player_bots(self, dt: float):
         # info = self.generate_info(t=t, dt=dt)
-        info = {"dt": dt, "board": self.board_new}
+        info = {"dt": dt, "board": self.board_new.copy()}
         info["players"] = {
             team: PlayerInfo(**p.to_dict()) for team, p in self.players.items()
         }
+        info["powerups"] = [PowerupInfo(**p.to_dict()) for p in self.powerups]
         for player in (p for p in self.active_players() if p.team != self._manual):
             if self.safe:
                 try:
@@ -262,7 +249,9 @@ class Engine:
             self.graphics.update_scores(players=self.players)
 
     def make_powerups(self, t: float):
-        if (len(self.powerups) >= config.max_powerups) or (t < config.no_powerups):
+        if (len(self.powerups) >= config.max_powerups) or (
+            t < config.no_powerups / self.speedup
+        ):
             return
         # print("making powerup")
         x, y = np.random.uniform(0, config.nx - 1), np.random.uniform(0, config.ny - 1)
@@ -272,7 +261,9 @@ class Engine:
             list(all_powerups.keys()), p=list(all_powerups.values())
         )
         # powerup = np.random.choice([ThickPowerup])
-        self.powerups.append(powerup(x=x, y=y, batch=self.graphics.main_batch))
+        self.powerups.append(
+            powerup(x=x, y=y, speedup=self.speedup, batch=self.graphics.main_batch)
+        )
 
     def get_powerups(self):
         for player in self.active_players():
@@ -283,8 +274,7 @@ class Engine:
                 )
                 if dist < (config.powerup_size / 2):
                     if isinstance(powerup, ClearPowerup):
-                        self.board_new[...] = 0
-                        self.board_old[...] = 0
+                        self.reset_board()
                     else:
                         powerup.apply(player)
                         player.powerups.append(powerup)
@@ -310,20 +300,21 @@ class Engine:
                 player.gap = t + config.gap_duration
 
     def update(self, dt: float):
-        t = time.time() - self.start_time
-        if self.we_have_a_winner:
+        # t = time.time() - self.start_time
+        dt = dt * self.speedup
+        self.time += dt
+        if self.match_winner:
             if self.graphics.exit_message is None:
-                self.graphics.show_exit_message(self.we_have_a_winner)
+                self.graphics.show_exit_message(self.match_winner)
             return
-        if self.exiting:
+        if self.round_winner:
             if self.graphics.exit_message is None:
-                self.graphics.show_exit_message("Press ESC to exit")
+                self.graphics.show_exit_message(self.round_winner)
             return
 
-        # dt = dt * self._speedup
-        self.update_player_gap_state(t)
+        self.update_player_gap_state(self.time)
         self.expire_powerups()
-        self.make_powerups(t)
+        self.make_powerups(self.time)
         self.call_player_bots(dt)
         self.move_players(dt=dt)
         self.get_powerups()
@@ -335,7 +326,7 @@ class Engine:
 
         players_left = list(self.active_players())
         if len(players_left) < 2:
-            self.exiting = True
+            # self.exiting = True
             self.exit(last_player=players_left[0] if players_left else None)
 
         return
