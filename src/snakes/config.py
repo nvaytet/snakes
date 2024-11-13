@@ -31,3 +31,4 @@ class Config:
         # self.gravity = np.array([0, -1.62])  # m/s^2
         # self.thrust = np.abs(self.gravity[1]) * 3  # m/s^2
         self.speed: float = 60  # 60.0
+        self.high_score = 12

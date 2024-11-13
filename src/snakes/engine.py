@@ -69,6 +69,7 @@ class Engine:
         # self.asteroids = []
         self.safe = safe
         self.exiting = False
+        self.we_have_a_winner = False
         # self.time_of_last_scoreboard_update = 0
         # self.time_of_last_asteroid = 0
         # self._crater_scaling = crater_scaling
@@ -87,6 +88,8 @@ class Engine:
         self.powerups = []
 
         self.bots = {bot.team: bot for bot in bots}
+        scores = read_scores(self.bots, test=test)
+
         # starting_positions = self.make_starting_positions(nplayers=len(self.bots))
         self.players = {}
         for i, team in enumerate(self.bots):
@@ -105,17 +108,17 @@ class Engine:
                 number=i + 1,
                 # color=colors[i + 1],
                 position=(xpos, ypos),
+                score=scores[team],
                 # avatar=getattr(bot, "avatar", 0),
                 # back_batch=self.graphics.background_batch,
                 # main_batch=self.graphics.main_batch,
             )
-        scores = read_scores(self.players, test=test)
-        for player in self.players.values():
-            player.score = scores[player.team]
+        # for player in self.players.values():
+        #     player.score = scores[player.team]
 
         self.graphics = Graphics(fullscreen=fullscreen, players=self.players)
 
-        for player in self.players.values():
+        for player in self.active_players():
             player.make_avatar(batch=self.graphics.main_batch)
 
         self.graphics.update_scores(players=self.players)
@@ -138,9 +141,14 @@ class Engine:
     #     choices = [int(random_origin + i * step) % config.nx for i in range(nplayers)]
     #     return np.random.permutation(choices)
 
-    def exit(self):
+    def exit(self, last_player: Player | None):
         # self.exiting = True
         # print(message)
+        if last_player is not None:
+            if last_player.finalist:
+                last_player.score = config.high_score * 20
+                self.we_have_a_winner = f"{last_player.team} wins the match!"
+
         finalize_scores(players=self.players, test=self._test)
 
     def active_players(self):
@@ -232,24 +240,24 @@ class Engine:
                 not player.invincible and not player.ghost
             ):
                 player.die()
-                print("died:", player.number)
+                # print("died:", player.number)
                 points += 1
-                print(patch)
+                # print(patch)
                 clipped = np.where(patch == 0, np.nan, patch)
                 patch_min = int(np.nanmin(clipped))
                 patch_max = int(np.nanmax(clipped))
-                print(points)
-                print("minmax", patch_min, patch_max)
+                # print(points)
+                # print("minmax", patch_min, patch_max)
                 bonus.append(patch_min if patch_max == player.number else patch_max)
-                print(bonus)
+                # print(bonus)
 
         self.board_old[...] = self.board_new[...]
         if points > 0:
-            for player in self.active_players():
-                print(player.team, player.score, points)
+            for player in [p for p in self.active_players() if not p.finalist]:
+                # print(player.team, player.score, points)
                 player.score += points
                 if player.number in bonus:
-                    print("bonus given to", player.team, player.number)
+                    # print("bonus given to", player.team, player.number)
                     player.score += 1
             self.graphics.update_scores(players=self.players)
 
@@ -303,9 +311,13 @@ class Engine:
 
     def update(self, dt: float):
         t = time.time() - self.start_time
+        if self.we_have_a_winner:
+            if self.graphics.exit_message is None:
+                self.graphics.show_exit_message(self.we_have_a_winner)
+            return
         if self.exiting:
             if self.graphics.exit_message is None:
-                self.graphics.show_exit_message()
+                self.graphics.show_exit_message("Press ESC to exit")
             return
 
         # dt = dt * self._speedup
@@ -321,8 +333,9 @@ class Engine:
         # self.update_asteroids(t, dt)
         self.graphics.update(array=self.board_old, players=self.players)
 
-        if len(list(self.active_players())) < 2:
+        players_left = list(self.active_players())
+        if len(players_left) < 2:
             self.exiting = True
-            self.exit()
+            self.exit(last_player=players_left[0] if players_left else None)
 
         return

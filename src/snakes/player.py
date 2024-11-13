@@ -18,16 +18,14 @@ class Player:
         self,
         number: int,
         team: str,
-        # color: str,
         position: tuple[float, float],
-        # avatar: Union[int, str],
-        # position: float,
-        # back_batch: pyglet.graphics.Batch,
-        # batch: pyglet.graphics.Batch,
+        score: int = 0,
     ):
         self.team = team
         self.number = number
-        self.score = 0
+        self.score = score
+        self.finalist = self.score >= config.high_score
+        self.winner = self.score >= config.high_score * 10
         self._thickness = config.thickness
         self.invincible = False
         self.ghost = False
@@ -52,7 +50,9 @@ class Player:
         #     main_batch=main_batch,
         # )
         self.direction = np.random.choice(["U", "D", "L", "R"])
-        self.dead = False
+        # If player score is crazy high it means they won the match already and
+        # shouldn't play
+        self.dead = self.score >= config.high_score * 10
         self.x, self.y = position
         print(self.x, self.y)
         # self.landed = False

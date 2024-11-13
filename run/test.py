@@ -24,6 +24,7 @@ for name in names:
 snakes.play(
     bots=bots,  # List of bots to use
     manual=True,  # Set to True to play manually using the keyboard arrow keys
+    test=False,
     # music=False,
     # crater_scaling=1.0,  # Artificially increase the size of craters
     # player_collisions=True,  # Set to False to disable collisions between players

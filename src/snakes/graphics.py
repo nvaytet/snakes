@@ -106,8 +106,18 @@ class Graphics:
             self.main_batch.draw()
 
     def update_scores(self, players: dict):
+        # texts = []
+        # for p in players.values():
+        #     if not p.winner:
+        #         texts.append(f"{p.team}: {"FINALIST" if p.finalist else p.score}")
         self.window.set_caption(
-            ", ".join(f"{p.team}: {p.score}" for p in players.values())
+            "          ".join(
+                [
+                    f"{p.team}={'FINALIST' if p.finalist else p.score}"
+                    for p in players.values()
+                    if not p.winner
+                ]
+            )
         )
 
     def update(self, array: np.ndarray, players: list = None):
@@ -157,9 +167,9 @@ class Graphics:
     #         batch=self.main_batch,
     #     )
 
-    def show_exit_message(self):
+    def show_exit_message(self, message):
         self.exit_message = pyglet.text.Label(
-            "Press ESC to exit",
+            message,
             # color=(153, 51, 153, 255),
             color=(255, 255, 255, 255),
             font_size=80,
@@ -169,3 +179,15 @@ class Graphics:
             anchor_x="center",
             anchor_y="center",
         )
+
+    # def show_end_of_match_message(self, winner):
+    #     self.exit_message = pyglet.text.Label(
+    #         f"{winner} wins the match!",
+    #         color=(255, 255, 255, 255),
+    #         font_size=80,
+    #         x=config.window_size[0] * 0.5,
+    #         y=config.window_size[1] * 0.5,
+    #         batch=self.main_batch,
+    #         anchor_x="center",
+    #         anchor_y="center",
+    #     )
