@@ -7,12 +7,12 @@ import pyglet
 import time
 
 from . import config
-from .powerup import all_powerups, ClearPowerup
+from .powerup import all_powerups, GhostPowerup
 
 from .graphics import Graphics
 from .player import Player
 from .scores import read_scores, finalize_scores
-from .tools import Instructions, PlayerInfo, PowerupInfo
+from .tools import Instructions, PlayerInfo, PowerupInfo, clear_path_info
 
 
 def add_key_actions(window, player: Player):
@@ -134,6 +134,8 @@ class Engine:
                 self.match_winner = f"{last_player.team} wins the match!"
             else:
                 self.round_winner = f"{last_player.team} wins the round!"
+        else:
+            self.round_winner = "It's a draw!"
 
         finalize_scores(players=self.players, test=self._test)
 
@@ -183,49 +185,56 @@ class Engine:
         points = 0
         bonus = []
         for player in self.active_players():
-            old = player.position()
+            old = PlayerInfo(**player.to_dict())
+            # old = player.position()
             player.move(dt=dt)
-            new = player.position()
-            # self.board_old[pos[1], pos[0]] = player.number
-            hw = (player.thickness - 1) // 2
-            ystart = min(old[1], new[1]) - hw
-            yend = max(old[1], new[1]) + 1 + hw
-            # if ystart != yend - 1:
-            #     ystart += 1
-            # yplus = 0
-            # else:
-            #     yplus = 1
-            xstart = min(old[0], new[0]) - hw
-            xend = max(old[0], new[0]) + 1 + hw
-            # if xstart != xend - 1:
-            #     xstart += 1
-            #     xplus = 0
-            # else:
-            #     xplus = 1
-            # ystart = min(max(0, ystart), config.ny)
-            # yend = min(max(0, yend), config.ny)
-            # xstart = min(max(0, xstart), config.nx)
-            # xend = min(max(0, xend), config.nx)
-            ystart = np.clip(ystart, 0, config.ny)
-            yend = np.clip(yend, 0, config.ny)
-            xstart = np.clip(xstart, 0, config.nx)
-            xend = np.clip(xend, 0, config.nx)
+            # # new = player.position()
+            # # self.board_old[pos[1], pos[0]] = player.number
+            # hw = (player.thickness - 1) // 2
+            # ystart = min(old[1], new[1]) - hw
+            # yend = max(old[1], new[1]) + 1 + hw
+            # # if ystart != yend - 1:
+            # #     ystart += 1
+            # # yplus = 0
+            # # else:
+            # #     yplus = 1
+            # xstart = min(old[0], new[0]) - hw
+            # xend = max(old[0], new[0]) + 1 + hw
+            # # if xstart != xend - 1:
+            # #     xstart += 1
+            # #     xplus = 0
+            # # else:
+            # #     xplus = 1
+            # # ystart = min(max(0, ystart), config.ny)
+            # # yend = min(max(0, yend), config.ny)
+            # # xstart = min(max(0, xstart), config.nx)
+            # # xend = min(max(0, xend), config.nx)
+            # ystart = np.clip(ystart, 0, config.ny)
+            # yend = np.clip(yend, 0, config.ny)
+            # xstart = np.clip(xstart, 0, config.nx)
+            # xend = np.clip(xend, 0, config.nx)
 
-            # # if (xend - 1 - xstart) + (yend - 1 - ystart) > 0:
-            # yplus = int(ystart != yend - 1)
-            # y1 = yplus and ((yend - 1) == new[1])
-            # y2 = yplus and (ystart == new[1])
-            # xplus = int(xstart != xend - 1)
-            # x1 = xplus and ((xend - 1) == new[0])
-            # x2 = xplus and (xstart == new[0])
+            # # # if (xend - 1 - xstart) + (yend - 1 - ystart) > 0:
+            # # yplus = int(ystart != yend - 1)
+            # # y1 = yplus and ((yend - 1) == new[1])
+            # # y2 = yplus and (ystart == new[1])
+            # # xplus = int(xstart != xend - 1)
+            # # x1 = xplus and ((xend - 1) == new[0])
+            # # x2 = xplus and (xstart == new[0])
+
+            info = clear_path_info(
+                player=old, destination=player.position(), board=self.board_old
+            )
+            sel = (
+                slice(info["ystart"], info["yend"], None),
+                slice(info["xstart"], info["xend"], None),
+            )
 
             if not player.ghost and not player.gap:
-                self.board_new[ystart:yend, xstart:xend] = player.number
+                self.board_new[sel[0], sel[1]] = player.number
 
-            patch = self.board_old[ystart:yend, xstart:xend]
-            if (patch.sum() > player.number * player.thickness**2) and (
-                not player.invincible and not player.ghost
-            ):
+            patch = self.board_old[sel[0], sel[1]]
+            if (not info["clear"]) and (not player.invincible and not player.ghost):
                 player.die()
                 # print("died:", player.number)
                 points += 1
@@ -260,6 +269,7 @@ class Engine:
         powerup = np.random.choice(
             list(all_powerups.keys()), p=list(all_powerups.values())
         )
+        powerup = GhostPowerup
         # powerup = np.random.choice([ThickPowerup])
         self.powerups.append(
             powerup(x=x, y=y, speedup=self.speedup, batch=self.graphics.main_batch)
@@ -273,7 +283,7 @@ class Engine:
                     np.array([player.x, player.y]) - np.array([powerup.x, powerup.y])
                 )
                 if dist < (config.powerup_size / 2):
-                    if isinstance(powerup, ClearPowerup):
+                    if powerup.kind == "clear":
                         self.reset_board()
                     else:
                         powerup.apply(player)

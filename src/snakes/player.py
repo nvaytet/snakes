@@ -156,4 +156,9 @@ class Player:
             "direction": self.direction,
             "speed": config.speed,
             "dead": self.dead,
+            "score": self.score,
+            "thickness": self.thickness,
+            "number": self.number,
+            "ghost": any(powerup.kind == "ghost" for powerup in self.powerups),
+            "finalist": self.finalist,
         }

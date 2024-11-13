@@ -8,6 +8,7 @@ class Powerup:
     def __init__(self, x, y, speedup, batch):
         self.x = x
         self.y = y
+        self.kind = None
         self.speedup = speedup
         self.avatar = image_to_sprite(
             Image.open(self.file),
@@ -35,7 +36,7 @@ class Powerup:
 
     def to_dict(self):
         return {
-            "kind": self.__class__.__name__,
+            "kind": self.kind,
             "x": self.x,
             "y": self.y,
         }
@@ -45,6 +46,7 @@ class ThinPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "thin.png"
         super().__init__(*args, **kwargs)
+        self.kind = "thin"
 
     def apply(self, player):
         player.thickness = max(player.thickness - 2, 1)
@@ -59,6 +61,7 @@ class ThickPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "thick.png"
         super().__init__(*args, **kwargs)
+        self.kind = "thick"
 
     def apply(self, player):
         player.thickness += 4
@@ -73,6 +76,7 @@ class GhostPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "ghost.png"
         super().__init__(*args, **kwargs)
+        self.kind = "ghost"
 
     def apply(self, player):
         player.ghost = True
@@ -87,12 +91,14 @@ class ClearPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "clear.png"
         super().__init__(*args, **kwargs)
+        self.kind = "clear"
 
 
 class FastPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "fast.png"
         super().__init__(*args, **kwargs)
+        self.kind = "fast"
 
     def apply(self, player):
         player.speed += 30
@@ -107,6 +113,7 @@ class SlowPowerup(Powerup):
     def __init__(self, *args, **kwargs):
         self.file = config.resources / "slow.png"
         super().__init__(*args, **kwargs)
+        self.kind = "slow"
 
     def apply(self, player):
         player.speed -= 30

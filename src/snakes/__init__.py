@@ -7,7 +7,7 @@ from .config import Config
 config = Config()
 
 from .engine import Engine
-from .tools import Instructions
+from .tools import Instructions, clear_path
 
 
 def play(*args, **kwargs):
