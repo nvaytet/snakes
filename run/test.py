@@ -5,7 +5,15 @@ import snakes
 
 import template_bot
 
-names = ["Alice", "Bob", "Charlie", "David"]
+names = [
+    "Alice",
+    "Bob",
+    "Charlie",
+    "David",
+    "Eleanor",
+    "Flemming",
+    "Greg",
+]
 
 bots = []
 for name in names:

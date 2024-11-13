@@ -65,7 +65,7 @@ class Engine:
         self.board_old[:, -1] = nplayers + 1
         self.board_new = self.board_old.copy()
         # self.start_time = None
-        # self._test = test
+        self._test = test
         # self.asteroids = []
         self.safe = safe
         self.exiting = False
@@ -186,7 +186,7 @@ class Engine:
 
     def move_players(self, dt: float):
         points = 0
-        bonus = 0
+        bonus = []
         for player in self.active_players():
             old = player.position()
             player.move(dt=dt)
@@ -232,17 +232,24 @@ class Engine:
                 not player.invincible and not player.ghost
             ):
                 player.die()
+                print("died:", player.number)
                 points += 1
-                clipped = np.clip(patch, 1, len(self.players))
-                patch_min = clipped.min()
-                patch_max = clipped.max()
-                bonus = patch_min if patch_max == player.number else patch_max
+                print(patch)
+                clipped = np.where(patch == 0, np.nan, patch)
+                patch_min = int(np.nanmin(clipped))
+                patch_max = int(np.nanmax(clipped))
+                print(points)
+                print("minmax", patch_min, patch_max)
+                bonus.append(patch_min if patch_max == player.number else patch_max)
+                print(bonus)
 
         self.board_old[...] = self.board_new[...]
         if points > 0:
             for player in self.active_players():
+                print(player.team, player.score, points)
                 player.score += points
-                if player.number == bonus:
+                if player.number in bonus:
+                    print("bonus given to", player.team, player.number)
                     player.score += 1
             self.graphics.update_scores(players=self.players)
 
