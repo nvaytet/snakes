@@ -3,7 +3,7 @@
 
 import snakes
 
-import template_bot
+import snake_bot
 
 names = [
     "Alice",
@@ -17,7 +17,7 @@ names = [
 
 bots = []
 for name in names:
-    bot = template_bot.Bot()
+    bot = snake_bot.Bot()
     bot.team = name
     bots.append(bot)
 
