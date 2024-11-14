@@ -3,11 +3,8 @@
 from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
 import pyglet
 from PIL import Image
-
-from . import config
 
 
 @dataclass
@@ -88,31 +85,3 @@ def image_to_sprite(
 ) -> pyglet.sprite.Sprite:
     imd = image_to_imagedata(img, anchor=anchor, recenter=recenter)
     return pyglet.sprite.Sprite(img=imd, x=x, y=y, batch=batch)
-
-
-def clear_path_info(player, destination, board):
-    hw = (player.thickness - 1) // 2
-    px = int(player.x)
-    py = int(player.y)
-    dx = int(destination[0])
-    dy = int(destination[1])
-    ystart = min(py, dy) - hw
-    yend = max(py, dy) + 1 + hw
-    xstart = min(px, dx) - hw
-    xend = max(px, dx) + 1 + hw
-    ystart = np.clip(ystart, 0, config.ny)
-    yend = np.clip(yend, 0, config.ny)
-    xstart = np.clip(xstart, 0, config.nx)
-    xend = np.clip(xend, 0, config.nx)
-    patch = board[ystart:yend, xstart:xend]
-    return {
-        "clear": not (patch.sum() > (player.number * player.thickness**2)),
-        "xstart": xstart,
-        "xend": xend,
-        "ystart": ystart,
-        "yend": yend,
-    }
-
-
-def clear_path(player, destination, board):
-    return clear_path_info(player, destination, board)["clear"]

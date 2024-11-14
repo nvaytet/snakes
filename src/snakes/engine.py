@@ -12,7 +12,7 @@ from .powerup import all_powerups
 from .graphics import Graphics
 from .player import Player
 from .scores import read_scores, finalize_scores
-from .tools import Instructions, PlayerInfo, PowerupInfo, clear_path_info
+from .tools import Instructions, PlayerInfo, PowerupInfo
 
 
 def add_key_actions(window, player: Player):
@@ -138,21 +138,26 @@ class Engine:
         points = 0
         bonus = []
         for player in self.active_players():
-            old = PlayerInfo(**player.to_dict())
+            old = player.position()
             player.move(dt=dt)
-            info = clear_path_info(
-                player=old, destination=player.position(), board=self.board_old
-            )
-            sel = (
-                slice(info["ystart"], info["yend"], None),
-                slice(info["xstart"], info["xend"], None),
-            )
+            new = player.position()
+            hw = (player.thickness - 1) // 2
+            ystart = min(old[1], new[1]) - hw
+            yend = max(old[1], new[1]) + 1 + hw
+            xstart = min(old[0], new[0]) - hw
+            xend = max(old[0], new[0]) + 1 + hw
+            ystart = np.clip(ystart, 0, config.ny)
+            yend = np.clip(yend, 0, config.ny)
+            xstart = np.clip(xstart, 0, config.nx)
+            xend = np.clip(xend, 0, config.nx)
 
             if not player.ghost and not player.gap:
-                self.board_new[sel[0], sel[1]] = player.number
+                self.board_new[ystart:yend, xstart:xend] = player.number
 
-            patch = self.board_old[sel[0], sel[1]]
-            if (not info["clear"]) and (not player.invincible and not player.ghost):
+            patch = self.board_old[ystart:yend, xstart:xend]
+            if (patch.sum() > (player.number * player.thickness**2)) and (
+                not player.invincible and (not player.ghost) and (player.gap == 0)
+            ):
                 player.die()
                 points += 1
                 clipped = np.where(patch == 0, np.nan, patch)
