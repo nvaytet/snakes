@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from dataclasses import dataclass
-from typing import Any
 
 import pyglet
 from PIL import Image
@@ -15,42 +14,6 @@ class Instructions:
 
     left: bool = False
     right: bool = False
-
-
-@dataclass(frozen=True)
-class PlayerInfo:
-    """
-    Information about a player.
-    """
-
-    team: str
-    x: float
-    y: float
-    direction: str
-    speed: float
-    dead: bool
-    score: int
-    thickness: int
-    number: int
-    ghost: bool
-    finalist: bool
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
-
-
-@dataclass(frozen=True)
-class PowerupInfo:
-    """
-    Information about a powerup.
-    """
-
-    x: float
-    y: float
-    kind: str
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
 
 
 def recenter_image(img: pyglet.image.ImageData) -> pyglet.image.ImageData:

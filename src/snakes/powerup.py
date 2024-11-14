@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+from dataclasses import dataclass
+from typing import Any
+
 from PIL import Image
 
 from . import config
@@ -40,6 +45,20 @@ class Powerup:
             "x": self.x,
             "y": self.y,
         }
+
+
+@dataclass(frozen=True)
+class PowerupInfo:
+    """
+    Information about a powerup.
+    """
+
+    x: float
+    y: float
+    kind: str
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
 
 
 class ThinPowerup(Powerup):

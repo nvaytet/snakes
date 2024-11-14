@@ -7,12 +7,12 @@ import pyglet
 import time
 
 from . import config
-from .powerup import all_powerups
+from .powerup import all_powerups, PowerupInfo
 
 from .graphics import Graphics
-from .player import Player
+from .player import Player, PlayerInfo
 from .scores import read_scores, finalize_scores
-from .tools import Instructions, PlayerInfo, PowerupInfo
+from .tools import Instructions
 
 
 def add_key_actions(window, player: Player):
@@ -50,9 +50,10 @@ class Engine:
         self.reset_board()
 
         self.players = {}
+        pad = 20
         for i, team in enumerate(self.bots):
-            xpos = np.random.uniform(0, config.nx - 1)
-            ypos = np.random.uniform(0, config.ny - 1)
+            xpos = np.random.uniform(pad, config.nx - pad - 1)
+            ypos = np.random.uniform(pad, config.ny - pad - 1)
             self.players[team] = Player(
                 team=team,
                 number=i + 1,

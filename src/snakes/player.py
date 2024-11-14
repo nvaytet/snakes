@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Optional
 
 import numpy as np
 from matplotlib.colors import to_hex, to_rgb
@@ -39,7 +40,6 @@ class Player:
         # shouldn't play
         self.dead = self.score >= config.high_score * 10
         self.x, self.y = position
-        print(self.x, self.y)
         self.avatar = None
 
     @property
@@ -114,3 +114,25 @@ class Player:
             "ghost": any(powerup.kind == "ghost" for powerup in self.powerups),
             "finalist": self.finalist,
         }
+
+
+@dataclass(frozen=True)
+class PlayerInfo:
+    """
+    Information about a player.
+    """
+
+    team: str
+    x: float
+    y: float
+    direction: str
+    speed: float
+    dead: bool
+    score: int
+    thickness: int
+    number: int
+    ghost: bool
+    finalist: bool
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
