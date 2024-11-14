@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-
 import snakes
-
 import snake_bot
 
 names = [
