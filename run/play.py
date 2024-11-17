@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-import snakes
 import snake_bot
+
+import snakes
 
 names = [
     "Alice",
@@ -21,6 +22,7 @@ for name in names:
 
 snakes.play(
     bots=bots,  # List of bots to use
-    manual=True,  # Set to True to play manually using the keyboard arrow keys
+    manual=False,  # Set to True to play manually using the keyboard arrow keys
+    seed=1,  # Set to an integer to make the game repeatable
     speedup=1,  # Increase to speed up the game (no guarantees this works very well)
 )

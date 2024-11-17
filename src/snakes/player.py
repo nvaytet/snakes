@@ -4,14 +4,12 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
+import pyglet
 from matplotlib.colors import to_hex, to_rgb
-
+from pyglet import shapes
 
 from . import config
 from .tools import Instructions
-
-import pyglet
-from pyglet import shapes
 
 
 class Player:
@@ -77,7 +75,7 @@ class Player:
         self.y += vy * dt
         self.avatar.position = (self.x * config.scaling, self.y * config.scaling)
 
-    def position(self):
+    def position(self) -> tuple[int, int]:
         return int(self.x), int(self.y)
 
     def turn_left(self):
@@ -91,6 +89,8 @@ class Player:
     def execute_bot_instructions(self, instructions: Optional[Instructions]):
         if instructions is None:
             return
+        if instructions.left and instructions.right:
+            raise ValueError("Cannot turn left and right at the same time")
         if instructions.left:
             self.turn_left()
         if instructions.right:

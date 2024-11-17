@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-from matplotlib import colors as mcolors
 import numpy as np
 import pyglet
+from matplotlib import colors as mcolors
 from PIL import Image
 
 from . import config
@@ -10,12 +10,9 @@ from .tools import image_to_imagedata, image_to_sprite
 
 
 class Graphics:
-    def __init__(self, fullscreen: bool = False, players: dict = None):
+    def __init__(self, players: dict = None):
         self.window = pyglet.window.Window(
-            config.window_size[0],
-            config.window_size[1],
-            fullscreen=fullscreen,
-            resizable=not fullscreen,
+            config.window_size[0], config.window_size[1], resizable=True
         )
 
         self.background_batch = pyglet.graphics.Batch()
@@ -60,7 +57,7 @@ class Graphics:
         img = Image.fromarray(np.flipud((self.cmap(array) * 255).astype("uint8")))
         self.background.image = image_to_imagedata(img, anchor=(0, 0), recenter=False)
 
-    def show_exit_message(self, message):
+    def show_exit_message(self, message: str):
         self.exit_message = pyglet.text.Label(
             message,
             color=(255, 255, 255, 255),

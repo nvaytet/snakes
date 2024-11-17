@@ -3,14 +3,16 @@
 from dataclasses import dataclass
 from typing import Any
 
+import pyglet
 from PIL import Image
 
 from . import config
+from .player import Player
 from .tools import image_to_sprite
 
 
 class Powerup:
-    def __init__(self, x, y, speedup, batch):
+    def __init__(self, x: float, y: float, speedup: int, batch: pyglet.graphics.Batch):
         self.x = x
         self.y = y
         self.kind = None
@@ -23,23 +25,23 @@ class Powerup:
         )
         self.duration = config.powerup_duration
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Powerup: {self.x} {self.y}"
 
-    def apply(self, player):
+    def apply(self, player: Player):
         self.avatar.delete()
         player.invincible = True
 
     def tick(self):
         self.duration -= self.speedup
 
-    def is_expired(self):
+    def is_expired(self) -> bool:
         return self.duration <= 0
 
     def revert(self, player):
         player.invincible = True
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "kind": self.kind,
             "x": self.x,

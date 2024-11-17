@@ -1,21 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-from typing import Optional
+import time
+from typing import Iterator
 
 import numpy as np
 import pyglet
-import time
+from pyglet.window import Window
 
 from . import config
-from .powerup import all_powerups, PowerupInfo
-
 from .graphics import Graphics
 from .player import Player, PlayerInfo
-from .scores import read_scores, finalize_scores
+from .powerup import PowerupInfo, all_powerups
+from .scores import finalize_scores, read_scores
 from .tools import Instructions
 
 
-def add_key_actions(window, player: Player):
+def add_key_actions(window: Window, player: Player):
     @window.event
     def on_key_press(symbol, modifiers):
         if symbol == pyglet.window.key.LEFT:
@@ -30,8 +30,7 @@ class Engine:
         bots: list,
         safe: bool = False,
         test: bool = True,
-        seed: Optional[int] = None,
-        fullscreen: bool = False,
+        seed: int | None = None,
         manual: bool = False,
         speedup: int = 1,
     ):
@@ -61,7 +60,7 @@ class Engine:
                 score=scores[team],
             )
 
-        self.graphics = Graphics(fullscreen=fullscreen, players=self.players)
+        self.graphics = Graphics(players=self.players)
 
         for player in self.active_players():
             player.make_avatar(batch=self.graphics.main_batch)
@@ -102,7 +101,7 @@ class Engine:
 
         finalize_scores(players=self.players, test=self._test)
 
-    def active_players(self):
+    def active_players(self) -> Iterator[Player]:
         return (p for p in self.players.values() if not p.dead)
 
     def execute_player_bot(self, team: str, info: dict) -> Instructions:

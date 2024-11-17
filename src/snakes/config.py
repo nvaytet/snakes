@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-import importlib_resources as ir
 from pathlib import Path
 
+import importlib_resources as ir
 
-# @dataclass(frozen=True)
+
 class Config:
     def __init__(self):
         self.fps: int = 30
@@ -20,5 +20,5 @@ class Config:
         self.gap_duration = 0.25
         self.max_powerups = 2
         self.no_powerups = 10
-        self.speed: float = 60  # 60.0
+        self.speed: float = 60.0
         self.high_score = 100
