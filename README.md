@@ -54,6 +54,19 @@ Survive the longest and try to eliminate the others.
 
 ### Power-ups:
 
+<table>
+    <tr>
+        <td>Decrease thickness<br><img src="https://github.com/user-attachments/assets/b54ba246-835e-4add-ab37-c85e930a4839" /></td>
+        <td>Increase thickness<br><img src="https://github.com/user-attachments/assets/9c58a0a0-0d88-4809-8558-6776deb4de45" /></td>
+        <td>No tail (can travel through obstacles)<br><img src="https://github.com/user-attachments/assets/281c2728-8476-4dd5-a609-4793cc90b2fa" /></td>
+    </tr>
+    <tr>
+        <td>Increase speed<br><img src="https://github.com/user-attachments/assets/57faa76b-b976-46ea-acac-962b35c1d10a" /></td>
+        <td>Decrease speed<br><img src="https://github.com/user-attachments/assets/bdec08de-cfb3-47c4-b7e3-c0f2d40f6c71" /></td>
+        <td>Clear board<br><img src="https://github.com/user-attachments/assets/1145aca1-ad69-453d-b385-5004d1c261b9" /></td>
+    </tr>
+</table>
+        
 
 
 ### Scoring:
