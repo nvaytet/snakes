@@ -19,6 +19,6 @@ class Config:
         self.gap_period = 8.0
         self.gap_duration = 0.25
         self.max_powerups = 2
-        self.no_powerups = 10
+        self.no_powerups = 1  # 0
         self.speed: float = 60.0
         self.high_score = 100

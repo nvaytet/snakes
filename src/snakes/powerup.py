@@ -11,6 +11,16 @@ from .player import Player
 from .tools import image_to_sprite
 
 
+def _change_thickness(value: int, direction: str) -> int:
+    thicknesses = [1, 3, 7, 15, 31, 63, 127, 255]
+    index = thicknesses.index(value)
+    if direction == "up":
+        index = min(index + 1, len(thicknesses) - 1)
+    elif direction == "down":
+        index = max(index - 1, 0)
+    return thicknesses[index]
+
+
 class Powerup:
     def __init__(self, x: float, y: float, speedup: int, batch: pyglet.graphics.Batch):
         self.x = x
@@ -70,11 +80,13 @@ class ThinPowerup(Powerup):
         self.kind = "thin"
 
     def apply(self, player):
-        player.thickness = max(player.thickness - 2, 1)
+        # player.thickness = max(player.thickness - 2, 1)
+        player.thickness = _change_thickness(player.thickness, "down")
         super().apply(player)
 
     def revert(self, player):
-        player.thickness += 2
+        # player.thickness += 2
+        player.thickness = _change_thickness(player.thickness, "up")
         super().revert(player)
 
 
@@ -85,11 +97,13 @@ class ThickPowerup(Powerup):
         self.kind = "thick"
 
     def apply(self, player):
-        player.thickness += 4
+        # player.thickness += 4
+        player.thickness = _change_thickness(player.thickness, "up")
         super().apply(player)
 
     def revert(self, player):
-        player.thickness = max(player.thickness - 4, 1)
+        # player.thickness = max(player.thickness - 4, 1)
+        player.thickness = _change_thickness(player.thickness, "down")
         super().revert(player)
 
 
@@ -146,12 +160,12 @@ class SlowPowerup(Powerup):
 
 
 listing = {
-    ThinPowerup: 1,
+    # ThinPowerup: 1,
     ThickPowerup: 1,
-    GhostPowerup: 1,
-    ClearPowerup: 0.3,
-    FastPowerup: 1,
-    SlowPowerup: 1,
+    # GhostPowerup: 1,
+    # ClearPowerup: 0.3,
+    # FastPowerup: 1,
+    # SlowPowerup: 1,
 }
 
 psum = sum(listing.values())

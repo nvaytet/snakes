@@ -6,10 +6,10 @@ from typing import Any, Optional
 import numpy as np
 import pyglet
 from matplotlib.colors import to_hex, to_rgb
-from pyglet import shapes
+from PIL import Image
 
 from . import config
-from .tools import Instructions
+from .tools import Instructions, image_to_sprite
 
 
 class Player:
@@ -47,44 +47,75 @@ class Player:
     @thickness.setter
     def thickness(self, value):
         self._thickness = value
-        self.avatar.width = value * config.scaling
-        self.avatar.height = value * config.scaling
-        self.avatar.anchor_position = (
-            0.5 * self.avatar.width,
-            0.5 * self.avatar.height,
-        )
+        # self.avatar.width = value * config.scaling
+        # self.avatar.height = value * config.scaling
+        # self.avatar.anchor_position = (
+        #     0.5 * self.avatar.width,
+        #     0.5 * self.avatar.height,
+        # )
+        self.update_avatar_thickness()
 
     def make_avatar(self, batch: pyglet.graphics.Batch):
-        self.avatar = shapes.Rectangle(
-            self.x,
-            self.y,
-            self._thickness * config.scaling,
-            self._thickness * config.scaling,
-            color=tuple(int(c * 255) for c in to_rgb(self.color)),
+        raw = Image.open(config.resources / "head.png")
+        self.raw_avatar_size = raw.height
+        a = np.array(raw)
+        b = a[..., :3].sum(axis=2) > 0
+        rgb = (np.array(to_rgb(self.color)) * 255).astype("uint8")
+        a[b, :3] = rgb
+        # im = Image.fromarray(a)
+        self.avatar = image_to_sprite(
+            Image.fromarray(a),
+            x=self.x * config.scaling,
+            y=self.y * config.scaling,
             batch=batch,
         )
-        self.avatar.anchor_position = (
-            0.5 * self.avatar.width,
-            0.5 * self.avatar.height,
-        )
+        # self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_width * 2
+        # print("avatar scale", self.avatar.scale)
+        # print(self.avatar.width)
+        self.update_avatar_thickness()
+        self.update_avatar_orientation()
+
+        # self.avatar.rotation = {"R": 0, "U": 90, "L": 180, "D": 270}[self.direction]
+
+        # self.avatar = shapes.Rectangle(
+        #     self.x,
+        #     self.y,
+        #     self._thickness * config.scaling,
+        #     self._thickness * config.scaling,
+        #     color=tuple(int(c * 255) for c in to_rgb(self.color)),
+        #     batch=batch,
+        # )
+        # self.avatar.anchor_position = (
+        #     0.5 * self.avatar.width,
+        #     0.5 * self.avatar.height,
+        # )
+
+    def update_avatar_thickness(self):
+        self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_size * 2.0
 
     def move(self, dt: float):
         vx = self.speed * ((self.direction == "R") - (self.direction == "L"))
         vy = self.speed * ((self.direction == "U") - (self.direction == "D"))
         self.x += vx * dt
         self.y += vy * dt
-        self.avatar.position = (self.x * config.scaling, self.y * config.scaling)
+        # self.avatar.position = (self.x * config.scaling, self.y * config.scaling)
+        self.avatar.update(x=self.x * config.scaling, y=self.y * config.scaling)
 
     def position(self) -> tuple[int, int]:
         return int(self.x), int(self.y)
 
+    def update_avatar_orientation(self):
+        self.avatar.rotation = {"R": 0, "U": 270, "L": 180, "D": 90}[self.direction]
+
     def turn_left(self):
         directions = "ULDR"
         self.direction = directions[(directions.index(self.direction) + 1) % 4]
+        self.update_avatar_orientation()
 
     def turn_right(self):
         directions = "URDL"
         self.direction = directions[(directions.index(self.direction) + 1) % 4]
+        self.update_avatar_orientation()
 
     def execute_bot_instructions(self, instructions: Optional[Instructions]):
         if instructions is None:

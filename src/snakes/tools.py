@@ -6,6 +6,14 @@ import pyglet
 from PIL import Image
 
 
+# @dataclass
+# class Bounds:
+#     xmin: int
+#     xmax: int
+#     ymin: int
+#     ymax: int
+
+
 @dataclass
 class Instructions:
     """

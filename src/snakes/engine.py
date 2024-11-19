@@ -142,19 +142,37 @@ class Engine:
             player.move(dt=dt)
             new = player.position()
             hw = (player.thickness - 1) // 2
-            ystart = min(old[1], new[1]) - hw
-            yend = max(old[1], new[1]) + 1 + hw
-            xstart = min(old[0], new[0]) - hw
-            xend = max(old[0], new[0]) + 1 + hw
-            ystart = np.clip(ystart, 0, config.ny)
-            yend = np.clip(yend, 0, config.ny)
-            xstart = np.clip(xstart, 0, config.nx)
-            xend = np.clip(xend, 0, config.nx)
+            if player.direction == "U":
+                obstacle = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1] + hw + 1)
+                tail = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1])
+            elif player.direction == "D":
+                obstacle = (new[0] - hw, new[0] + hw + 1, new[1] - hw, old[1] + hw + 1)
+                tail = (new[0] - hw, new[0] + hw + 1, new[1] + 1, old[1] + hw + 1)
+            elif player.direction == "L":
+                obstacle = (new[0] - hw, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
+                tail = (new[0] + 1, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
+            elif player.direction == "R":
+                obstacle = (old[0] - hw, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
+                tail = (old[0] - hw, new[0], new[1] - hw, new[1] + hw + 1)
+
+            # ystart = min(old[1], new[1]) - hw
+            # yend = max(old[1], new[1]) + 1 + hw
+            # xstart = min(old[0], new[0]) - hw
+            # xend = max(old[0], new[0]) + 1 + hw
+            # ystart = np.clip(ystart, 0, config.ny)
+            # yend = np.clip(yend, 0, config.ny)
+            # xstart = np.clip(xstart, 0, config.nx)
+            # xend = np.clip(xend, 0, config.nx)
+            obstacle = (
+                *np.clip(obstacle[0:2], 0, config.nx),
+                *np.clip(obstacle[2:], 0, config.ny),
+            )
+            tail = (*np.clip(tail[0:2], 0, config.nx), *np.clip(tail[2:], 0, config.ny))
 
             if not player.ghost and not player.gap:
-                self.board_new[ystart:yend, xstart:xend] = player.number
+                self.board_new[tail[2] : tail[3], tail[0] : tail[1]] = player.number
 
-            patch = self.board_old[ystart:yend, xstart:xend]
+            patch = self.board_old[obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]]
             if (patch.sum() > (player.number * player.thickness**2)) and (
                 not player.invincible and (not player.ghost) and (player.gap == 0)
             ):
@@ -164,6 +182,20 @@ class Engine:
                 patch_min = int(np.nanmin(clipped))
                 patch_max = int(np.nanmax(clipped))
                 bonus.append(patch_min if patch_max == player.number else patch_max)
+
+            # if not player.ghost and not player.gap:
+            #     self.board_new[ystart:yend, xstart:xend] = player.number
+
+            # patch = self.board_old[ystart:yend, xstart:xend]
+            # if (patch.sum() > (player.number * player.thickness**2)) and (
+            #     not player.invincible and (not player.ghost) and (player.gap == 0)
+            # ):
+            #     player.die()
+            #     points += 1
+            #     clipped = np.where(patch == 0, np.nan, patch)
+            #     patch_min = int(np.nanmin(clipped))
+            #     patch_max = int(np.nanmax(clipped))
+            #     bonus.append(patch_min if patch_max == player.number else patch_max)
 
         self.board_old[...] = self.board_new[...]
         if points > 0:
