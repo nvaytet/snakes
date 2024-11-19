@@ -91,7 +91,7 @@ class Player:
         # )
 
     def update_avatar_thickness(self):
-        self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_size * 2.0
+        self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_size * 1.8
 
     def move(self, dt: float):
         vx = self.speed * ((self.direction == "R") - (self.direction == "L"))

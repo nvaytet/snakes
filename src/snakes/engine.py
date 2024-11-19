@@ -240,6 +240,11 @@ class Engine:
                 if pup.is_expired():
                     pup.revert(player)
                     player.powerups.remove(pup)
+        for powerup in list(self.powerups):
+            powerup.age()
+            if powerup.lifetime <= 0:
+                powerup.avatar.delete()
+                self.powerups.remove(powerup)
 
     def update_player_gap_state(self, t: float):
         for player in self.active_players():

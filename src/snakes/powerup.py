@@ -33,10 +33,14 @@ class Powerup:
             y=y * config.scaling,
             batch=batch,
         )
-        self.duration = config.powerup_duration
+        # self.duration = config.powerup_duration
+        self.lifetime = 25 * config.fps
 
     def __str__(self) -> str:
         return f"Powerup: {self.x} {self.y}"
+
+    def age(self):
+        self.lifetime -= self.speedup
 
     def apply(self, player: Player):
         self.avatar.delete()
@@ -78,6 +82,7 @@ class ThinPowerup(Powerup):
         self.file = config.resources / "thin.png"
         super().__init__(*args, **kwargs)
         self.kind = "thin"
+        self.duration = 10 * config.fps
 
     def apply(self, player):
         # player.thickness = max(player.thickness - 2, 1)
@@ -95,6 +100,7 @@ class ThickPowerup(Powerup):
         self.file = config.resources / "thick.png"
         super().__init__(*args, **kwargs)
         self.kind = "thick"
+        self.duration = 10 * config.fps
 
     def apply(self, player):
         # player.thickness += 4
@@ -112,6 +118,7 @@ class GhostPowerup(Powerup):
         self.file = config.resources / "ghost.png"
         super().__init__(*args, **kwargs)
         self.kind = "ghost"
+        self.duration = 8 * config.fps
 
     def apply(self, player):
         player.ghost = True
@@ -134,6 +141,7 @@ class FastPowerup(Powerup):
         self.file = config.resources / "fast.png"
         super().__init__(*args, **kwargs)
         self.kind = "fast"
+        self.duration = 10 * config.fps
 
     def apply(self, player):
         player.speed += 30
@@ -149,6 +157,7 @@ class SlowPowerup(Powerup):
         self.file = config.resources / "slow.png"
         super().__init__(*args, **kwargs)
         self.kind = "slow"
+        self.duration = 10 * config.fps
 
     def apply(self, player):
         player.speed -= 30
@@ -160,12 +169,12 @@ class SlowPowerup(Powerup):
 
 
 listing = {
-    # ThinPowerup: 1,
+    ThinPowerup: 1,
     ThickPowerup: 1,
-    # GhostPowerup: 1,
-    # ClearPowerup: 0.3,
-    # FastPowerup: 1,
-    # SlowPowerup: 1,
+    GhostPowerup: 1,
+    ClearPowerup: 0.3,
+    FastPowerup: 1,
+    SlowPowerup: 1,
 }
 
 psum = sum(listing.values())
