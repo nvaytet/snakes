@@ -54,13 +54,9 @@ class Graphics:
         )
 
     def update(self, array: np.ndarray):
-        # img = Image.fromarray(np.flipud((self.cmap(array) * 255).astype("uint8")))
-        # self.background.image = image_to_imagedata(img, anchor=(0, 0), recenter=False)
-
         new_data = np.ascontiguousarray(
             np.flipud((self.cmap(array) * 255).astype("uint8"))
         )
-        # new_data = (self.cmap(array) * 255).astype("uint8")
         img = Image.frombuffer(
             "RGBA", new_data.shape[1::-1], new_data, "raw", "RGBA", 0, 1
         )

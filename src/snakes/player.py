@@ -26,7 +26,7 @@ class Player:
         self.finalist = self.score >= config.high_score
         self.winner = self.score >= config.high_score * 10
         self._thickness = config.thickness
-        self.invincible = False
+        # self.invincible = False
         self.ghost = False
         self.gap = 0
         self.next_gap = np.random.uniform(0, config.gap_period)
@@ -47,12 +47,6 @@ class Player:
     @thickness.setter
     def thickness(self, value):
         self._thickness = value
-        # self.avatar.width = value * config.scaling
-        # self.avatar.height = value * config.scaling
-        # self.avatar.anchor_position = (
-        #     0.5 * self.avatar.width,
-        #     0.5 * self.avatar.height,
-        # )
         self.update_avatar_thickness()
 
     def make_avatar(self, batch: pyglet.graphics.Batch):
@@ -62,33 +56,14 @@ class Player:
         b = a[..., :3].sum(axis=2) > 0
         rgb = (np.array(to_rgb(self.color)) * 255).astype("uint8")
         a[b, :3] = rgb
-        # im = Image.fromarray(a)
         self.avatar = image_to_sprite(
             Image.fromarray(a),
             x=self.x * config.scaling,
             y=self.y * config.scaling,
             batch=batch,
         )
-        # self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_width * 2
-        # print("avatar scale", self.avatar.scale)
-        # print(self.avatar.width)
         self.update_avatar_thickness()
         self.update_avatar_orientation()
-
-        # self.avatar.rotation = {"R": 0, "U": 90, "L": 180, "D": 270}[self.direction]
-
-        # self.avatar = shapes.Rectangle(
-        #     self.x,
-        #     self.y,
-        #     self._thickness * config.scaling,
-        #     self._thickness * config.scaling,
-        #     color=tuple(int(c * 255) for c in to_rgb(self.color)),
-        #     batch=batch,
-        # )
-        # self.avatar.anchor_position = (
-        #     0.5 * self.avatar.width,
-        #     0.5 * self.avatar.height,
-        # )
 
     def update_avatar_thickness(self):
         self.avatar.scale = self.thickness * config.scaling / self.raw_avatar_size * 1.8
@@ -98,7 +73,6 @@ class Player:
         vy = self.speed * ((self.direction == "U") - (self.direction == "D"))
         self.x += vx * dt
         self.y += vy * dt
-        # self.avatar.position = (self.x * config.scaling, self.y * config.scaling)
         self.avatar.update(x=self.x * config.scaling, y=self.y * config.scaling)
 
     def position(self) -> tuple[int, int]:

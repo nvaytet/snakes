@@ -33,7 +33,6 @@ class Powerup:
             y=y * config.scaling,
             batch=batch,
         )
-        # self.duration = config.powerup_duration
         self.lifetime = 25 * config.fps
 
     def __str__(self) -> str:
@@ -44,7 +43,7 @@ class Powerup:
 
     def apply(self, player: Player):
         self.avatar.delete()
-        player.invincible = True
+        # player.invincible = True
 
     def tick(self):
         self.duration -= self.speedup
@@ -53,7 +52,8 @@ class Powerup:
         return self.duration <= 0
 
     def revert(self, player):
-        player.invincible = True
+        # player.invincible = True
+        return
 
     def to_dict(self) -> dict:
         return {
@@ -85,12 +85,10 @@ class ThinPowerup(Powerup):
         self.duration = 10 * config.fps
 
     def apply(self, player):
-        # player.thickness = max(player.thickness - 2, 1)
         player.thickness = _change_thickness(player.thickness, "down")
         super().apply(player)
 
     def revert(self, player):
-        # player.thickness += 2
         player.thickness = _change_thickness(player.thickness, "up")
         super().revert(player)
 
@@ -103,12 +101,10 @@ class ThickPowerup(Powerup):
         self.duration = 10 * config.fps
 
     def apply(self, player):
-        # player.thickness += 4
         player.thickness = _change_thickness(player.thickness, "up")
         super().apply(player)
 
     def revert(self, player):
-        # player.thickness = max(player.thickness - 4, 1)
         player.thickness = _change_thickness(player.thickness, "down")
         super().revert(player)
 
