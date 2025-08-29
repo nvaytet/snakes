@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, asdict
 import hashlib as hl
+from typing import Any
 
 import numpy as np
 import pyglet
@@ -93,7 +93,7 @@ class Player:
         self.direction = directions[(directions.index(self.direction) + 1) % 4]
         self.update_avatar_orientation()
 
-    def execute_bot_instructions(self, instructions: Optional[Instructions]):
+    def execute_bot_instructions(self, instructions: Instructions | None):
         if instructions is None:
             return
         if instructions.left and instructions.right:
@@ -141,5 +141,17 @@ class PlayerInfo:
     ghost: bool
     finalist: bool
 
+    def __post_init__(self):
+        object.__setattr__(self, "_fields", asdict(self))
+
     def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
+        return self._fields[key]
+
+    def keys(self):
+        return self._fields.keys()
+
+    def values(self):
+        return self._fields.values()
+
+    def items(self):
+        return self._fields.items()
