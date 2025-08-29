@@ -32,7 +32,7 @@ class Player:
         self.next_gap = np.random.uniform(0, config.gap_period)
         self.speed = config.speed
         self.powerups = []
-        self.color = to_hex(f"C{self.number-1}")
+        self.color = to_hex(f"C{self.number - 1}")
         self.direction = np.random.choice(["U", "D", "L", "R"])
         # If player score is crazy high it means they won the match already and
         # shouldn't play
@@ -71,8 +71,8 @@ class Player:
     def move(self, dt: float):
         vx = self.speed * ((self.direction == "R") - (self.direction == "L"))
         vy = self.speed * ((self.direction == "U") - (self.direction == "D"))
-        self.x += vx * dt
-        self.y += vy * dt
+        self.x = (self.x + vx * dt) % config.nx
+        self.y = (self.y + vy * dt) % config.ny
         self.avatar.update(x=self.x * config.scaling, y=self.y * config.scaling)
 
     def position(self) -> tuple[int, int]:
