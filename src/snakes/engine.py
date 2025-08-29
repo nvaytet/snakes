@@ -15,15 +15,6 @@ from .scores import finalize_scores, read_scores
 from .tools import Instructions
 
 
-def add_key_actions(window: Window, player: Player):
-    @window.event
-    def on_key_press(symbol, modifiers):
-        if symbol == pyglet.window.key.LEFT:
-            player.turn_left()
-        elif symbol == pyglet.window.key.RIGHT:
-            player.turn_right()
-
-
 class Engine:
     def __init__(
         self,
@@ -31,7 +22,7 @@ class Engine:
         safe: bool = False,
         test: bool = True,
         seed: int | None = None,
-        manual: bool = False,
+        controlling: str | None = None,
         speedup: int = 1,
     ):
         if seed is not None:
@@ -44,6 +35,7 @@ class Engine:
         self.speedup = int(speedup)
         self.powerups = []
         self.bots = {bot.team: bot for bot in bots}
+        self.paused = True
         scores = read_scores(self.bots, test=test)
 
         self.reset_board()
@@ -67,10 +59,12 @@ class Engine:
 
         self.graphics.update_scores(players=self.players)
 
-        if manual:
-            manual_player = list(self.players.values())[0]
+        if controlling:
+            manual_player = self.players[controlling]
             self._manual = manual_player.team
-            add_key_actions(window=self.graphics.window, player=manual_player)
+            add_key_actions(
+                window=self.graphics.window, player=manual_player, engine=self
+            )
         else:
             self._manual = None
 
@@ -239,6 +233,11 @@ class Engine:
                 player.gap = t + config.gap_duration
 
     def update(self, dt: float):
+        if self.paused:
+            self.graphics.show_player_names(self.players)
+            return
+        else:
+            self.graphics.hide_player_names()
         dt = dt * self.speedup
         self.time += dt
         if self.match_winner:
@@ -263,3 +262,14 @@ class Engine:
             self.exit(last_player=players_left[0] if players_left else None)
 
         return
+
+
+def add_key_actions(window: Window, player: Player, engine: Engine):
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == pyglet.window.key.LEFT:
+            player.turn_left()
+        elif symbol == pyglet.window.key.RIGHT:
+            player.turn_right()
+        elif symbol == pyglet.window.key.SPACE:
+            engine.paused = not engine.paused

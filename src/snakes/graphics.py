@@ -17,6 +17,7 @@ class Graphics:
 
         self.background_batch = pyglet.graphics.Batch()
         self.main_batch = pyglet.graphics.Batch()
+        self.player_names = None
 
         self.cmap = mcolors.ListedColormap(
             ["black"] + [p.color for p in players.values()] + ["grey"]
@@ -73,3 +74,25 @@ class Graphics:
             anchor_x="center",
             anchor_y="center",
         )
+
+    def show_player_names(self, players: str):
+        self.player_names = [
+            pyglet.text.Label(
+                player.team,
+                color=(int(x * 255) for x in mcolors.to_rgba(player.color)),
+                font_size=20,
+                x=player.x * config.scaling,
+                y=player.y * config.scaling,
+                batch=self.main_batch,
+                anchor_x="center",
+                anchor_y="bottom",
+            )
+            for player in players.values()
+        ]
+
+    def hide_player_names(self):
+        if self.player_names is None:
+            return
+        for p in self.player_names:
+            p.delete()
+        self.player_names = None
