@@ -11,6 +11,13 @@ names = [
     "Eleanor",
     "Flemming",
     "Greg",
+    # "Hilde",
+    # "Isolde",
+    # "Jack",
+    # "Kevin",
+    # "Louis",
+    # "Marie",
+    # "Nicholas",
 ]
 
 bots = []

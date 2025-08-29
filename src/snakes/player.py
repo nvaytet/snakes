@@ -2,10 +2,11 @@
 
 from dataclasses import dataclass
 from typing import Any, Optional
+import hashlib as hl
 
 import numpy as np
 import pyglet
-from matplotlib.colors import to_hex, to_rgb
+from matplotlib.colors import to_rgb
 from PIL import Image
 
 from . import config
@@ -32,7 +33,8 @@ class Player:
         self.next_gap = np.random.uniform(0, config.gap_period)
         self.speed = config.speed
         self.powerups = []
-        self.color = to_hex(f"C{self.number - 1}")
+        # self.color = to_hex(f"C{self.number - 1}")
+        self.color = "#" + hl.sha256(self.team.encode()).hexdigest()[:6]
         self.direction = np.random.choice(["U", "D", "L", "R"])
         # If player score is crazy high it means they won the match already and
         # shouldn't play
