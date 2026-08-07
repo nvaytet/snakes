@@ -1,9 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
+
 import importlib
+import sys
+from pathlib import Path
+
 import snakes
 
-snake_bot = importlib.import_module("../../bots/snake_bot")
+root = Path(__file__).resolve().parent
+sys.path.insert(0, str(root / "bots"))
+
+snake_bot = importlib.import_module("snake_bot")
+
 
 names = [
     "Alice",
