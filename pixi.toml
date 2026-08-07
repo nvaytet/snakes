@@ -1,0 +1,76 @@
+[project]
+name = "snake-course"
+channels = ["conda-forge"]
+platforms = [
+    "linux-64",
+    "osx-64",
+    "osx-arm64",
+    "win-64",
+]
+
+[dependencies]
+python = "3.11.*"
+git = "*"
+numpy = "*"
+matplotlib = "*"
+pyglet = ">=2.0.10"
+
+[tasks]
+setup = """
+python -c "
+from pathlib import Path
+import subprocess
+
+def clone(url, dest):
+    dest = Path(dest)
+    if dest.exists():
+        print(f'{dest} already exists, skipping')
+        return
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.check_call([
+        'git',
+        'clone',
+        url,
+        str(dest)
+    ])
+
+clone(
+    'https://github.com/nvaytet/snakes.git',
+    'snakes'
+)
+
+clone(
+    'https://github.com/nvaytet/snake_bot.git',
+    'bots/snake_bot'
+)
+
+subprocess.check_call([
+    'pip',
+    'install',
+    '-e',
+    './snakes'
+])
+"
+"""
+
+update = """
+python -c "
+import subprocess
+from pathlib import Path
+
+repo = Path('snakes')
+
+if not repo.exists():
+    raise SystemExit('No game repo. Run: pixi run setup')
+
+subprocess.check_call([
+    'git',
+    '-C',
+    str(repo),
+    'pull'
+])
+"
+"""
+
+play = "python snakes/run/play.py"

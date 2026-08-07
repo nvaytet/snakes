@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-import snake_bot
+import importlib
 import snakes
+
+snake_bot = importlib.import_module("../../bots/snake_bot")
 
 names = [
     "Alice",
