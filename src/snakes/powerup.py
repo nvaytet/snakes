@@ -33,7 +33,7 @@ class Powerup:
             y=y * config.scaling,
             batch=batch,
         )
-        self.lifetime = 25 * config.fps
+        self.lifetime = config.powerup_lifetime * config.fps
 
     def __str__(self) -> str:
         return f"Powerup: {self.x} {self.y}"

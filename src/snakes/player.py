@@ -10,7 +10,7 @@ from matplotlib.colors import to_rgb
 from PIL import Image
 
 from . import config
-from .tools import Instructions, image_to_sprite
+from .tools import image_to_sprite
 
 
 class Player:
@@ -27,13 +27,11 @@ class Player:
         self.finalist = self.score >= config.high_score
         self.winner = self.score >= config.high_score * 10
         self._thickness = config.thickness
-        # self.invincible = False
         self.ghost = False
         self.gap = 0
         self.next_gap = np.random.uniform(0, config.gap_period)
         self.speed = config.speed
         self.powerups = []
-        # self.color = to_hex(f"C{self.number - 1}")
         self.color = "#" + hl.sha256(self.team.encode()).hexdigest()[:6]
         self.direction = np.random.choice(["U", "D", "L", "R"])
         # If player score is crazy high it means they won the match already and
@@ -73,8 +71,8 @@ class Player:
     def move(self, dt: float):
         vx = self.speed * ((self.direction == "R") - (self.direction == "L"))
         vy = self.speed * ((self.direction == "U") - (self.direction == "D"))
-        self.x = (self.x + vx * dt) % config.nx
-        self.y = (self.y + vy * dt) % config.ny
+        self.x = self.x + vx * dt
+        self.y = self.y + vy * dt
         self.avatar.update(x=self.x * config.scaling, y=self.y * config.scaling)
 
     def position(self) -> tuple[int, int]:
@@ -93,14 +91,13 @@ class Player:
         self.direction = directions[(directions.index(self.direction) + 1) % 4]
         self.update_avatar_orientation()
 
-    def execute_bot_instructions(self, instructions: Instructions | None):
+    def execute_bot_instructions(self, instructions: str | None):
         if instructions is None:
             return
-        if instructions.left and instructions.right:
-            raise ValueError("Cannot turn left and right at the same time")
-        if instructions.left:
+        ins = instructions.lower()
+        if ins == "left":
             self.turn_left()
-        if instructions.right:
+        elif ins == "right":
             self.turn_right()
 
     def die(self):

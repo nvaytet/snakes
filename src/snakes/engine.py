@@ -12,7 +12,6 @@ from .graphics import Graphics
 from .player import Player, PlayerInfo
 from .powerup import PowerupInfo, all_powerups
 from .scores import finalize_scores, read_scores
-from .tools import Instructions
 
 
 class Engine:
@@ -38,6 +37,8 @@ class Engine:
         self.paused = True
         scores = read_scores(self.bots, test=test)
 
+        self.board = np.zeros((config.ny, config.nx), dtype=np.uint8)
+        self.fresh_trail = np.zeros((config.ny, config.nx), dtype=np.uint8)
         self.reset_board()
 
         self.players = {}
@@ -62,11 +63,14 @@ class Engine:
         if controlling:
             manual_player = self.players[controlling]
             self._manual = manual_player.team
-            add_key_actions(
-                window=self.graphics.window, player=manual_player, engine=self
-            )
         else:
             self._manual = None
+
+        add_key_actions(
+            window=self.graphics.window,
+            player=self.players.get(controlling),
+            engine=self,
+        )
 
         self.start_time = time.time()
         self.time = 0.0
@@ -76,12 +80,13 @@ class Engine:
 
     def reset_board(self):
         nplayers = len(self.bots)
-        self.board_old = np.zeros((config.ny, config.nx), dtype=np.uint8)
-        self.board_old[0, :] = nplayers + 1
-        self.board_old[-1, :] = nplayers + 1
-        self.board_old[:, 0] = nplayers + 1
-        self.board_old[:, -1] = nplayers + 1
-        self.board_new = self.board_old.copy()
+        self.board[...] = 0
+        self.board[0, :] = nplayers + 1
+        self.board[-1, :] = nplayers + 1
+        self.board[:, 0] = nplayers + 1
+        self.board[:, -1] = nplayers + 1
+
+        self.fresh_trail[...] = 0
 
     def exit(self, last_player: Player | None):
         if last_player is not None:
@@ -98,7 +103,7 @@ class Engine:
     def active_players(self) -> Iterator[Player]:
         return (p for p in self.players.values() if not p.dead)
 
-    def execute_player_bot(self, team: str, info: dict) -> Instructions:
+    def execute_player_bot(self, team: str, info: dict) -> str | None:
         instructions = None
         if self.safe:
             try:
@@ -110,7 +115,7 @@ class Engine:
         return instructions
 
     def call_player_bots(self, dt: float):
-        info = {"dt": dt, "board": self.board_new.copy()}
+        info = {"dt": dt, "board": self.board.copy()}
         info["players"] = {
             team: PlayerInfo(**p.to_dict()) for team, p in self.players.items()
         }
@@ -131,23 +136,23 @@ class Engine:
     def move_players(self, dt: float):
         points = 0
         bonus = []
+        board_updates = []
         for player in self.active_players():
             old = player.position()
             player.move(dt=dt)
             new = player.position()
             hw = (player.thickness - 1) // 2
+
             if player.direction == "U":
-                obstacle = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1] + hw + 1)
-                tail = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1])
+                obstacle = (new[0] - hw, new[0] + hw + 1, old[1], new[1])
             elif player.direction == "D":
-                obstacle = (new[0] - hw, new[0] + hw + 1, new[1] - hw, old[1] + hw + 1)
-                tail = (new[0] - hw, new[0] + hw + 1, new[1] + 1, old[1] + hw + 1)
+                obstacle = (new[0] - hw, new[0] + hw + 1, new[1], old[1])
             elif player.direction == "L":
-                obstacle = (new[0] - hw, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
-                tail = (new[0] + 1, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
+                obstacle = (new[0], old[0], new[1] - hw, new[1] + hw + 1)
             elif player.direction == "R":
-                obstacle = (old[0] - hw, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
-                tail = (old[0] - hw, new[0], new[1] - hw, new[1] + hw + 1)
+                obstacle = (old[0], new[0], new[1] - hw, new[1] + hw + 1)
+
+            tail = obstacle
 
             obstacle = (
                 *np.clip(obstacle[0:2], 0, config.nx),
@@ -156,25 +161,37 @@ class Engine:
             tail = (*np.clip(tail[0:2], 0, config.nx), *np.clip(tail[2:], 0, config.ny))
 
             if not player.ghost and not player.gap:
-                self.board_new[tail[2] : tail[3], tail[0] : tail[1]] = player.number
+                board_updates.append(
+                    {
+                        "slice": (slice(tail[2], tail[3]), slice(tail[0], tail[1])),
+                        "value": player.number,
+                    }
+                )
 
-            patch = self.board_old[obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]]
-            # if (patch.sum() > (player.number * player.thickness**2)) and (
-            #     not player.invincible and (not player.ghost) and (player.gap == 0)
-            # ):
-            if (
-                (patch.sum() > (player.number * player.thickness**2))
-                and (not player.ghost)
-                and (player.gap == 0)
-            ):
+            patch = self.board[
+                obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]
+            ].copy()
+
+            fresh = self.fresh_trail[
+                obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]
+            ]
+
+            patch[(patch == player.number) & (fresh == player.number)] = 0
+
+            if np.any(patch) and (not player.ghost) and (player.gap == 0):
                 player.die()
                 points += 1
-                clipped = np.where(patch == 0, np.nan, patch)
-                patch_min = int(np.nanmin(clipped))
-                patch_max = int(np.nanmax(clipped))
-                bonus.append(patch_min if patch_max == player.number else patch_max)
+                killer = np.where(patch == player.number, 0, patch).max()
+                if killer > 0:
+                    bonus.append(killer)
 
-        self.board_old[...] = self.board_new[...]
+        self.fresh_trail[...] = 0
+
+        # Synchronized upate
+        for update in board_updates:
+            self.board[update["slice"]] = update["value"]
+            self.fresh_trail[update["slice"]] = update["value"]
+
         if points > 0:
             for player in [p for p in self.active_players() if not p.finalist]:
                 player.score += points
@@ -255,7 +272,7 @@ class Engine:
         self.call_player_bots(dt)
         self.move_players(dt=dt)
         self.get_powerups()
-        self.graphics.update(array=self.board_old)
+        self.graphics.update(array=self.board)
 
         players_left = list(self.active_players())
         if len(players_left) < 2:
@@ -264,12 +281,14 @@ class Engine:
         return
 
 
-def add_key_actions(window: Window, player: Player, engine: Engine):
+def add_key_actions(window: Window, player: Player | None, engine: Engine):
     @window.event
     def on_key_press(symbol, modifiers):
         if symbol == pyglet.window.key.LEFT:
-            player.turn_left()
+            if player is not None:
+                player.turn_left()
         elif symbol == pyglet.window.key.RIGHT:
-            player.turn_right()
+            if player is not None:
+                player.turn_right()
         elif symbol == pyglet.window.key.SPACE:
             engine.paused = not engine.paused
