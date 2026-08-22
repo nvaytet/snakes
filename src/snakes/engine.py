@@ -38,7 +38,7 @@ class Engine:
         scores = read_scores(self.bots, test=test)
 
         self.board = np.zeros((config.ny, config.nx), dtype=np.uint8)
-        self.turn_mask = np.zeros((config.ny, config.nx), dtype=np.uint8)
+        self.fresh_trail = np.zeros((config.ny, config.nx), dtype=np.uint8)
         self.reset_board()
 
         self.players = {}
@@ -86,6 +86,8 @@ class Engine:
         self.board[:, 0] = nplayers + 1
         self.board[:, -1] = nplayers + 1
         # self.board_new = self.board.copy()
+
+        self.fresh_trail[...] = 0
 
     def exit(self, last_player: Player | None):
         if last_player is not None:
@@ -171,26 +173,11 @@ class Engine:
                 obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]
             ].copy()
 
-            old_head = (
-                old[0] - hw,
-                old[0] + hw + 1,
-                old[1] - hw,
-                old[1] + hw + 1,
-            )
+            fresh = self.fresh_trail[
+                obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]
+            ]
 
-            old_head = (
-                max(old_head[0], obstacle[0]),
-                min(old_head[1], obstacle[1]),
-                max(old_head[2], obstacle[2]),
-                min(old_head[3], obstacle[3]),
-            )
-
-            if old_head[0] < old_head[1] and old_head[2] < old_head[3]:
-                patch_x = slice(old_head[0] - obstacle[0], old_head[1] - obstacle[0])
-                patch_y = slice(old_head[2] - obstacle[2], old_head[3] - obstacle[2])
-
-                neck = patch[patch_y, patch_x]
-                neck[neck == player.number] = 0
+            patch[(patch == player.number) & (fresh == player.number)] = 0
 
             if np.any(patch) and (not player.ghost) and (player.gap == 0):
                 player.die()
@@ -199,9 +186,12 @@ class Engine:
                 if killer > 0:
                     bonus.append(killer)
 
+        self.fresh_trail[...] = 0
+
         # Synchronized upate
         for update in board_updates:
             self.board[update["slice"]] = update["value"]
+            self.fresh_trail[update["slice"]] = update["value"]
 
         if points > 0:
             for player in [p for p in self.active_players() if not p.finalist]:
