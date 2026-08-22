@@ -10,7 +10,7 @@
 3. Install [pixi](https://pixi.prefix.dev/latest/installation/) if you don't have it installed already
 4. Download/copy this [pixi.toml](https://raw.githubusercontent.com/nvaytet/snakes/refs/heads/main/pixi.toml) file into the `pythongame` folder
 5. Go inside the game folder and setup the game: `pixi run setup`
-6. Run the game: `pixi run play`
+6. Run the game: `pixi run play` (SPACEBAR to start a round)
 7. Clone your bot into the `pythongame/bots` folder
 
 ## Game rules
@@ -93,4 +93,7 @@ class Bot:
 
 ## Tips
 
-- Use `speedup=3` to speed up your game (results may not exactly reflect a normal round)
+- Use `speedup=3` in `play.py` to speed up your game (results may not exactly reflect a normal round)
+- Set `controlling="SomeName"` to control one of the players with the keyboard Left and Right keys
+- SPACEBAR during a round pauses the game
+- ESCAPE exits the game
