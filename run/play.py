@@ -12,6 +12,7 @@ sys.path.insert(0, str(root / "bots"))
 
 snake_bot = importlib.import_module("snake_bot")
 
+# my_bot = importlib.import_module("my_bot")
 
 names = [
     "Alice",
@@ -35,6 +36,8 @@ for name in names:
     bot = snake_bot.Bot()
     bot.team = str(name)
     bots.append(bot)
+
+# bots.append(my_bot.Bot())  # Add my bot
 
 snakes.play(
     bots=bots,  # List of bots to use
