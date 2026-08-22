@@ -52,7 +52,6 @@ class Engine:
                 position=(xpos, ypos),
                 score=scores[team],
             )
-            print(f"Player {team} has number {i + 1} {self.players[team].number}")
 
         self.graphics = Graphics(players=self.players)
 
@@ -142,27 +141,6 @@ class Engine:
             player.move(dt=dt)
             new = player.position()
             hw = (player.thickness - 1) // 2
-            # if player.direction == "U":
-            #     obstacle = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1] + hw + 1)
-            #     tail = (new[0] - hw, new[0] + hw + 1, old[1] - hw, new[1])
-            # elif player.direction == "D":
-            #     obstacle = (new[0] - hw, new[0] + hw + 1, new[1] - hw, old[1] + hw + 1)
-            #     tail = (new[0] - hw, new[0] + hw + 1, new[1] + 1, old[1] + hw + 1)
-            # elif player.direction == "L":
-            #     obstacle = (new[0] - hw, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
-            #     tail = (new[0] + 1, old[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
-            # elif player.direction == "R":
-            #     obstacle = (old[0] - hw, new[0] + hw + 1, new[1] - hw, new[1] + hw + 1)
-            #     tail = (old[0] - hw, new[0], new[1] - hw, new[1] + hw + 1)
-
-            # if player.direction == "U":
-            #     obstacle = (new[0] - hw, new[0] + hw + 1, old[1], new[1] + 1)
-            # elif player.direction == "D":
-            #     obstacle = (new[0] - hw, new[0] + hw + 1, new[1], old[1] + 1)
-            # elif player.direction == "L":
-            #     obstacle = (new[0], old[0] + 1, new[1] - hw, new[1] + hw + 1)
-            # elif player.direction == "R":
-            #     obstacle = (old[0], new[0] + 1, new[1] - hw, new[1] + hw + 1)
 
             if player.direction == "U":
                 obstacle = (new[0] - hw, new[0] + hw + 1, old[1], new[1])
@@ -182,7 +160,6 @@ class Engine:
             tail = (*np.clip(tail[0:2], 0, config.nx), *np.clip(tail[2:], 0, config.ny))
 
             if not player.ghost and not player.gap:
-                # self.board_new[tail[2] : tail[3], tail[0] : tail[1]] = player.number
                 board_updates.append(
                     {
                         "slice": (slice(tail[2], tail[3]), slice(tail[0], tail[1])),
@@ -190,26 +167,37 @@ class Engine:
                     }
                 )
 
-            patch = self.board[obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]]
-            # if (patch.sum() > (player.number * player.thickness**2)) and (
-            #     not player.invincible and (not player.ghost) and (player.gap == 0)
-            # ):
-            # print(
-            #     f"Player {player.team}, pos: {new},  patch sum: {patch.sum()} number: {player.number}"
-            # )
-            # print("patch bounds", obstacle[0], obstacle[1], obstacle[2], obstacle[3])
-            if (
-                # (patch.sum() > (player.number * player.thickness**2))
-                (patch.sum() > 0) and (not player.ghost) and (player.gap == 0)
-            ):
+            patch = self.board[
+                obstacle[2] : obstacle[3], obstacle[0] : obstacle[1]
+            ].copy()
+
+            old_head = (
+                old[0] - hw,
+                old[0] + hw + 1,
+                old[1] - hw,
+                old[1] + hw + 1,
+            )
+
+            old_head = (
+                max(old_head[0], obstacle[0]),
+                min(old_head[1], obstacle[1]),
+                max(old_head[2], obstacle[2]),
+                min(old_head[3], obstacle[3]),
+            )
+
+            if old_head[0] < old_head[1] and old_head[2] < old_head[3]:
+                patch_x = slice(old_head[0] - obstacle[0], old_head[1] - obstacle[0])
+                patch_y = slice(old_head[2] - obstacle[2], old_head[3] - obstacle[2])
+
+                neck = patch[patch_y, patch_x]
+                neck[neck == player.number] = 0
+
+            if np.any(patch) and (not player.ghost) and (player.gap == 0):
                 player.die()
                 points += 1
-                clipped = np.where(patch == 0, np.nan, patch)
-                patch_min = int(np.nanmin(clipped))
-                patch_max = int(np.nanmax(clipped))
-                bonus.append(patch_min if patch_max == player.number else patch_max)
-
-        # self.board[...] = self.board_new[...]
+                killer = np.where(patch == player.number, 0, patch).max()
+                if killer > 0:
+                    bonus.append(killer)
 
         # Synchronized upate
         for update in board_updates:
