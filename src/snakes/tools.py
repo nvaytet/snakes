@@ -1,27 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-from dataclasses import dataclass
 
 import pyglet
 from PIL import Image
-
-
-# @dataclass
-# class Bounds:
-#     xmin: int
-#     xmax: int
-#     ymin: int
-#     ymax: int
-
-
-@dataclass
-class Instructions:
-    """
-    Instructions for the snake.
-    """
-
-    left: bool = False
-    right: bool = False
 
 
 def recenter_image(img: pyglet.image.ImageData) -> pyglet.image.ImageData:

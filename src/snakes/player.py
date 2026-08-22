@@ -10,7 +10,7 @@ from matplotlib.colors import to_rgb
 from PIL import Image
 
 from . import config
-from .tools import Instructions, image_to_sprite
+from .tools import image_to_sprite
 
 
 class Player:
@@ -93,14 +93,13 @@ class Player:
         self.direction = directions[(directions.index(self.direction) + 1) % 4]
         self.update_avatar_orientation()
 
-    def execute_bot_instructions(self, instructions: Instructions | None):
+    def execute_bot_instructions(self, instructions: str | None):
         if instructions is None:
             return
-        if instructions.left and instructions.right:
-            raise ValueError("Cannot turn left and right at the same time")
-        if instructions.left:
+        ins = instructions.lower()
+        if ins == "left":
             self.turn_left()
-        if instructions.right:
+        elif ins == "right":
             self.turn_right()
 
     def die(self):

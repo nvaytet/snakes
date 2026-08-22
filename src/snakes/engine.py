@@ -12,7 +12,6 @@ from .graphics import Graphics
 from .player import Player, PlayerInfo
 from .powerup import PowerupInfo, all_powerups
 from .scores import finalize_scores, read_scores
-from .tools import Instructions
 
 
 class Engine:
@@ -104,7 +103,7 @@ class Engine:
     def active_players(self) -> Iterator[Player]:
         return (p for p in self.players.values() if not p.dead)
 
-    def execute_player_bot(self, team: str, info: dict) -> Instructions:
+    def execute_player_bot(self, team: str, info: dict) -> str | None:
         instructions = None
         if self.safe:
             try:
