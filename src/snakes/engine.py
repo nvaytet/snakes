@@ -65,11 +65,14 @@ class Engine:
         if controlling:
             manual_player = self.players[controlling]
             self._manual = manual_player.team
-            add_key_actions(
-                window=self.graphics.window, player=manual_player, engine=self
-            )
         else:
             self._manual = None
+
+        add_key_actions(
+            window=self.graphics.window,
+            player=self.players.get(controlling),
+            engine=self,
+        )
 
         self.start_time = time.time()
         self.time = 0.0
@@ -302,12 +305,14 @@ class Engine:
         return
 
 
-def add_key_actions(window: Window, player: Player, engine: Engine):
+def add_key_actions(window: Window, player: Player | None, engine: Engine):
     @window.event
     def on_key_press(symbol, modifiers):
         if symbol == pyglet.window.key.LEFT:
-            player.turn_left()
+            if player is not None:
+                player.turn_left()
         elif symbol == pyglet.window.key.RIGHT:
-            player.turn_right()
+            if player is not None:
+                player.turn_right()
         elif symbol == pyglet.window.key.SPACE:
             engine.paused = not engine.paused
