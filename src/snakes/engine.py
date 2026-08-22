@@ -195,10 +195,10 @@ class Engine:
             # if (patch.sum() > (player.number * player.thickness**2)) and (
             #     not player.invincible and (not player.ghost) and (player.gap == 0)
             # ):
-            print(
-                f"Player {player.team}, pos: {new},  patch sum: {patch.sum()} number: {player.number}"
-            )
-            print("patch bounds", obstacle[0], obstacle[1], obstacle[2], obstacle[3])
+            # print(
+            #     f"Player {player.team}, pos: {new},  patch sum: {patch.sum()} number: {player.number}"
+            # )
+            # print("patch bounds", obstacle[0], obstacle[1], obstacle[2], obstacle[3])
             if (
                 # (patch.sum() > (player.number * player.thickness**2))
                 (patch.sum() > 0) and (not player.ghost) and (player.gap == 0)
