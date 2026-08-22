@@ -85,7 +85,6 @@ class Engine:
         self.board[-1, :] = nplayers + 1
         self.board[:, 0] = nplayers + 1
         self.board[:, -1] = nplayers + 1
-        # self.board_new = self.board.copy()
 
         self.fresh_trail[...] = 0
 
