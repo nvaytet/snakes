@@ -1,0 +1,82 @@
+[project]
+name = "snakes"
+channels = ["conda-forge"]
+platforms = [
+    "linux-64",
+    "osx-64",
+    "osx-arm64",
+    "win-64",
+]
+
+[dependencies]
+python = "3.12.*"
+pip = "*"
+git = "*"
+numpy = "*"
+matplotlib = "*"
+pyglet = ">=2.0.10"
+
+[tasks]
+setup = """
+python -c "
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+owner = 'https://github.com/nvaytet/'
+game = 'snakes'
+template = 'snake_bot'
+
+def clone(url, dest):
+    dest = Path(dest)
+    if dest.exists():
+        print(f'{dest} already exists, skipping')
+        return
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.check_call([
+        'git',
+        'clone',
+        url,
+        str(dest)
+    ])
+
+clone(f'{owner}{game}.git', game)
+
+clone(f'{owner}{template}.git', f'bots/{template}')
+
+subprocess.check_call([
+    sys.executable,
+    '-m',
+    'pip',
+    'install',
+    '-e',
+    f'./{game}',
+])
+
+shutil.copy2(Path(f'{game}/run/play.py'), Path('play.py'))
+shutil.copy2(Path(f'{game}/run/tournament.py'), Path('tournament.py'))
+"
+"""
+
+update = """
+python -c "
+import subprocess
+from pathlib import Path
+
+repo = Path('snakes')
+
+if not repo.exists():
+    raise SystemExit('No game repo. Run: pixi run setup')
+
+subprocess.check_call([
+    'git',
+    '-C',
+    str(repo),
+    'pull'
+])
+"
+"""
+
+play = "python play.py"
