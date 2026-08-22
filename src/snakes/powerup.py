@@ -43,7 +43,6 @@ class Powerup:
 
     def apply(self, player: Player):
         self.avatar.delete()
-        # player.invincible = True
 
     def tick(self):
         self.duration -= self.speedup
@@ -52,7 +51,6 @@ class Powerup:
         return self.duration <= 0
 
     def revert(self, player):
-        # player.invincible = True
         return
 
     def to_dict(self) -> dict:

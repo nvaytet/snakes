@@ -79,13 +79,7 @@ class Engine:
         pyglet.app.run()
 
     def reset_board(self):
-        nplayers = len(self.bots)
         self.board[...] = 0
-        self.board[0, :] = nplayers + 1
-        self.board[-1, :] = nplayers + 1
-        self.board[:, 0] = nplayers + 1
-        self.board[:, -1] = nplayers + 1
-
         self.fresh_trail[...] = 0
 
     def exit(self, last_player: Player | None):
@@ -141,6 +135,17 @@ class Engine:
             old = player.position()
             player.move(dt=dt)
             new = player.position()
+
+            if (
+                (new[0] < 0)
+                or (new[0] >= config.nx)
+                or (new[1] < 0)
+                or (new[1] >= config.ny)
+            ):
+                player.die()
+                points += 1
+                continue
+
             hw = (player.thickness - 1) // 2
 
             if player.direction == "U":
@@ -214,7 +219,6 @@ class Engine:
 
     def get_powerups(self):
         for player in self.active_players():
-            # player.invincible = False
             for powerup in self.powerups:
                 dist = np.linalg.norm(
                     np.array([player.x, player.y]) - np.array([powerup.x, powerup.y])
