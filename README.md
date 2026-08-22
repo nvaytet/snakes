@@ -3,40 +3,15 @@
 # snakes
 
 
-## TL;DR
+## How to
 
 1. Create a repository for your bot from [the template](https://github.com/new?template_name=snake_bot&template_owner=nvaytet).
-
-2. Get started with:
-
-### conda
-
-```
-conda create -n <ENVNAME> -c conda-forge python=3.10.*
-conda activate <ENVNAME>
-git clone https://github.com/nvaytet/snakes.git
-git clone https://github.com/<USERNAME>/<MYPLAYERNAME>_bot.git
-cd snakes/
-python -m pip install -e .
-cd run/
-ln -s ../../<MYPLAYERNAME>_bot .
-python play.py
-```
-
-### venv
-
-```
-git clone https://github.com/nvaytet/snakes.git
-git clone https://github.com/<USERNAME>/<MYPLAYERNAME>_bot.git
-cd snakes/
-python -m venv .<ENVNAME>
-source .<ENVNAME>/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .
-cd run/
-ln -s ../../<MYPLAYERNAME>_bot .
-python play.py
-```
+2. Create a new folder (e.g. name it `pythongame`)
+3. Install [pixi](https://pixi.prefix.dev/latest/installation/) if you don't have it installed already
+4. Download/copy this [pixi.toml](https://raw.githubusercontent.com/nvaytet/snakes/refs/heads/main/pixi.toml) file into the `pythongame` folder
+5. Go inside the game folder and setup the game: `pixi run setup`
+6. Run the game: `pixi run play`
+7. Clone your bot into the `pythongame/bots` folder
 
 ## Game rules
 
@@ -83,7 +58,7 @@ Survive the longest and try to eliminate the others.
 
 ### Instructions are simple
 
-- **LEFT** or **RIGHT**
+- `"left"` or `"right"`
 
 ### Info you are provided with
 
@@ -98,39 +73,22 @@ Survive the longest and try to eliminate the others.
 ```Py
 import numpy as np
 
-from snakes import Instructions
-
 
 class Bot:
     def __init__(self):
         self.team = "Anaconda"  # This is your team name
+        self.rng = np.random.default_rng()
 
-    def run(self, dt, board, players, powerups) -> Instructions:
-        instructions = Instructions()
+    def run(self, dt, board, players, powerups) -> str | None:
+        x = self.rng.random()
 
-        me = players[self.team]
+        if x < 0.01:
+            return "left"
+        if x > 0.99:
+            return "right"
 
-        # Projected position: check what is N pixels ahead?
-        n = 8
-        hwidth = (me.thickness - 1) // 2
-        x = int(me.x)
-        y = int(me.y)
-
-        bounds = {
-            "U": (x, x + 1, y + hwidth + 1, y + n + 1),
-            "D": (x, x + 1, y - n, y - hwidth),
-            "L": (x - n, x - hwidth, y, y + 1),
-            "R": (x + hwidth + 1, x + n + 1, y, y + 1),
-        }
-
-        xmin, xmax, ymin, ymax = bounds[me.direction]
-        xmin, xmax = np.clip([xmin, xmax], 0, board.shape[1])
-        ymin, ymax = np.clip([ymin, ymax], 0, board.shape[0])
-
-        if np.any(board[ymin:ymax, xmin:xmax] > 0):
-            instructions.left = True
-
-        return instructions
+        # Returning nothing means go straight
+        return
 ```
 
 ## Tips
